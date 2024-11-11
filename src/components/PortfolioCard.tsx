@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperType } from 'swiper';
 // Import Swiper styles
@@ -26,145 +26,81 @@ interface PortfolioCardProps {
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls = [], link }) => {
   const swiperRef = useRef<SwiperType>();
-  const isTransitioning = useRef(false);
-  const isDragging = useRef(false);
-  const currentEffect = useRef<'fade' | 'creative'>('fade');
+  const autoplayTimeoutRef = useRef<NodeJS.Timeout>();
   
   const slides = [
     ...videoUrls.map(src => ({ type: 'video', src })),
     ...images.map(src => ({ type: 'image', src })),
   ];
 
-  const restartAutoplay = () => {
-    if (swiperRef.current?.autoplay) {
-      swiperRef.current.autoplay.stop();
-      setTimeout(() => {
-        swiperRef.current?.autoplay?.start();
-      }, 100);
-    }
-  };
+  // Cleanup function to clear any pending timeouts
+  useEffect(() => {
+    return () => {
+      if (autoplayTimeoutRef.current) {
+        clearTimeout(autoplayTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const handleInit = (swiper: SwiperType) => {
+  const handleSwiperInit = (swiper: SwiperType) => {
     swiperRef.current = swiper;
-    
-    swiper.on('slideChangeTransitionStart', () => {
-      if (!isDragging.current) {
-        isTransitioning.current = true;
+
+    // Function to resume autoplay
+    const resumeAutoplay = () => {
+      if (autoplayTimeoutRef.current) {
+        clearTimeout(autoplayTimeoutRef.current);
       }
+      
+      autoplayTimeoutRef.current = setTimeout(() => {
+        if (swiperRef.current?.autoplay) {
+          swiperRef.current.autoplay.start();
+        }
+      }, 300);
+    };
+
+    // Initialize swiper events
+    const events = [
+      'slideChange',
+      'touchEnd',
+      'navigationNext',
+      'navigationPrev',
+      'slideChangeTransitionEnd'
+    ];
+
+    events.forEach(event => {
+      // @ts-ignore - Swiper types don't include all events
+      swiper.on(event, resumeAutoplay);
     });
 
-    swiper.on('slideChangeTransitionEnd', () => {
-      isTransitioning.current = false;
-      if (!isDragging.current) {
-        handleEffectChange();
-      }
-      restartAutoplay();
-    });
-
+    // Handle touch start - pause autoplay
     swiper.on('touchStart', () => {
-      isDragging.current = true;
-      swiper.params.effect = 'creative';
-      swiper.creativeEffect = getCreativeEffect();
-    });
-
-    swiper.on('touchEnd', () => {
-      setTimeout(() => {
-        isDragging.current = false;
-        handleEffectChange();
-        restartAutoplay();
-      }, 100);
-    });
-
-    swiper.on('dragEnd', () => {
-      setTimeout(() => {
-        isDragging.current = false;
-        handleEffectChange();
-        restartAutoplay();
-      }, 100);
-    });
-
-    swiper.on('transitionEnd', () => {
-      if (isDragging.current) {
-        setTimeout(() => {
-          restartAutoplay();
-        }, 100);
+      if (swiperRef.current?.autoplay) {
+        swiperRef.current.autoplay.stop();
       }
     });
 
-    const navigation = swiper.navigation;
-    if (navigation) {
-      const { nextEl, prevEl } = navigation;
+    // Ensure navigation is properly initialized
+    if (swiper.navigation) {
+      const { nextEl, prevEl } = swiper.navigation;
+      
       if (nextEl) {
         nextEl.addEventListener('click', () => {
-          setTimeout(restartAutoplay, 100);
+          if (swiperRef.current?.slideNext) {
+            swiperRef.current.slideNext();
+            resumeAutoplay();
+          }
         });
       }
+      
       if (prevEl) {
         prevEl.addEventListener('click', () => {
-          setTimeout(restartAutoplay, 100);
+          if (swiperRef.current?.slidePrev) {
+            swiperRef.current.slidePrev();
+            resumeAutoplay();
+          }
         });
       }
     }
-
-    swiper.on('wheel', () => {
-      setTimeout(restartAutoplay, 100);
-    });
-  };
-
-  const getSlideType = (index: number) => {
-    if (index < 0 || !slides[index]) return null;
-    return slides[index % slides.length].type;
-  };
-
-  const handleEffectChange = () => {
-    if (!swiperRef.current || !slides.length || isDragging.current) return;
-    
-    const swiper = swiperRef.current;
-    const currentIndex = swiper.activeIndex;
-    const nextIndex = (currentIndex + 1) % slides.length;
-
-    const currentType = getSlideType(currentIndex);
-    const nextType = getSlideType(nextIndex);
-
-    if (!currentType || !nextType) return;
-
-    if (currentType === 'video' || nextType === 'video') {
-      currentEffect.current = 'fade';
-      swiper.params.effect = 'fade';
-      swiper.fadeEffect = getFadeEffect();
-    } else {
-      currentEffect.current = currentEffect.current === 'fade' ? 'creative' : 'fade';
-      swiper.params.effect = currentEffect.current;
-      
-      if (currentEffect.current === 'creative') {
-        swiper.creativeEffect = getCreativeEffect();
-      } else {
-        swiper.fadeEffect = getFadeEffect();
-      }
-    }
-  };
-
-  const getFadeEffect = () => ({
-    crossFade: true
-  });
-
-  const getCreativeEffect = () => ({
-    prev: {
-      translate: ['-100%', 0, -1],
-      scale: 1,
-      opacity: 1
-    },
-    next: {
-      translate: ['100%', 0, 0],
-      scale: 1,
-      opacity: 1
-    }
-  });
-
-  const handleSlideChange = () => {
-    if (!swiperRef.current || isTransitioning.current || isDragging.current) return;
-    handleEffectChange();
-    restartAutoplay();
   };
 
   return (
@@ -173,57 +109,36 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
         <Swiper
           modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
           effect="fade"
-          fadeEffect={getFadeEffect()}
-          creativeEffect={getCreativeEffect()}
-          autoplay={{ 
+          fadeEffect={{
+            crossFade: true
+          }}
+          autoplay={{
             delay: 6000,
             disableOnInteraction: false,
             pauseOnMouseEnter: true,
-            waitForTransition: false
+            waitForTransition: true
           }}
           loop={true}
-          navigation={{
-            enabled: true
-          }}
-          onSwiper={handleInit}
-          onSlideChange={handleSlideChange}
-          onTouchEnd={() => {
-            setTimeout(() => {
-              isDragging.current = false;
-              handleEffectChange();
-              restartAutoplay();
-            }, 100);
-          }}
-          onTouchMove={() => {
-            isDragging.current = true;
-          }}
-          onSliderMove={() => {
-            isDragging.current = true;
-          }}
-          onSliderFirstMove={() => {
-            isDragging.current = true;
-          }}
+          navigation={true}
+          onSwiper={handleSwiperInit}
           className="h-full w-full !px-120"
           slidesPerView={1}
           speed={800}
           spaceBetween={0}
-          watchSlidesProgress={true}
-          observer={true}
-          observeParents={true}
-          allowTouchMove={true}
           grabCursor={true}
-          mousewheel={true}
+          watchSlidesProgress={true}
+          preventInteractionOnTransition={false}
+          allowTouchMove={true}
+          mousewheel={{
+            forceToAxis: true
+          }}
           keyboard={{
             enabled: true,
-            onlyInViewport: true,
+            onlyInViewport: true
           }}
           touchRatio={1}
-          resistance={false}
-          touchStartPreventDefault={false}
-          preventInteractionOnTransition={false}
-          touchMoveStopPropagation={true}
-          momentumRatio={0.8}
-          momentumVelocityRatio={0.8}
+          resistance={true}
+          resistanceRatio={0.85}
         >
           {slides.map((slide, idx) => (
             <SwiperSlide key={`slide-${idx}`}>

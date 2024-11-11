@@ -37,11 +37,3 @@
   }
 }
 
-
-.swiper-button-next {
-display: none
-}
-
-.swiper-button-prev {
-  left: 10px !important;
-}

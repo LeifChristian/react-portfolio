@@ -1,14 +1,13 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import type { Swiper as SwiperType } from 'swiper';
+// Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/effect-fade';
-import 'swiper/css/effect-cube';
 import 'swiper/css/navigation';
+import 'swiper/css/effect-fade';
 import 'swiper/css/autoplay';
-import { Autoplay as AutoplayModule } from 'swiper/modules';
-import { EffectFade as EffectFadeModule } from 'swiper/modules';
-import { EffectCube as EffectCubeModule } from 'swiper/modules';
-import { Navigation as NavigationModule } from 'swiper/modules';
+// Import required modules
+import { Navigation, EffectFade, Autoplay } from 'swiper/modules';
 
 interface PortfolioCardProps {
   title: string;
@@ -23,19 +22,36 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
     ...videoUrls.map(src => ({ type: 'video', src }))
   ];
 
+  const handleInit = (swiper: SwiperType) => {
+    console.log('Swiper initialized', swiper);
+  };
+
+  const handleSlideChange = () => {
+    console.log('Slide changed');
+  };
+
   return (
     <div className="rounded-lg shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4">
-      <div className="aspect-video w-full mb-4">
+      <div className="aspect-video w-full mb-4 relative">
         <Swiper
-          modules={[EffectFadeModule, EffectCubeModule, NavigationModule, AutoplayModule]}
+          modules={[Navigation, EffectFade, Autoplay]}
           effect="fade"
           fadeEffect={{ crossFade: true }}
-          autoplay={{ delay: 3000 }}
+          autoplay={{ 
+            delay: 3000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true
+          }}
           loop={true}
-          navigation={true}
+          navigation={{
+            enabled: true
+          }}
+          onSwiper={handleInit}
+          onSlideChange={handleSlideChange}
           className="h-full w-full"
           slidesPerView={1}
-          speed={800}
+          speed={1000}
+          spaceBetween={30}
         >
           {slides.map((slide, idx) => (
             <SwiperSlide key={`slide-${idx}`}>

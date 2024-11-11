@@ -1,12 +1,10 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/effect-cube';
 import 'swiper/css/navigation';
 import 'swiper/css/autoplay';
-// Import required modules - correct import syntax
 import { Autoplay as AutoplayModule } from 'swiper/modules';
 import { EffectFade as EffectFadeModule } from 'swiper/modules';
 import { EffectCube as EffectCubeModule } from 'swiper/modules';
@@ -20,35 +18,51 @@ interface PortfolioCardProps {
 }
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls = [], link }) => {
+  const slides = [
+    ...images.map(src => ({ type: 'image', src })),
+    ...videoUrls.map(src => ({ type: 'video', src }))
+  ];
+
   return (
     <div className="rounded-lg shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4">
-      <Swiper
-        modules={[EffectFadeModule, EffectCubeModule, NavigationModule, AutoplayModule]}
-        effect="fade"
-        autoplay={{ delay: 3000 }}
-        loop={true}
-        navigation={true}
-        breakpoints={{
-          320: { slidesPerView: 1 },
-          768: { slidesPerView: 2 },
-          1024: { slidesPerView: 3 },
-        }}
-      >
-        {images.map((imgSrc, idx) => (
-          <SwiperSlide key={`img-${idx}`}>
-            <img src={imgSrc} alt={`Slide ${idx}`} className="w-full h-48 object-cover" />
-          </SwiperSlide>
-        ))}
-        {videoUrls.map((videoUrl, idx) => (
-          <SwiperSlide key={`video-${idx}`}>
-            <video 
-              controls 
-              src={videoUrl} 
-              className="w-full h-48 object-cover"
-            />
-          </SwiperSlide>
-        ))}
-      </Swiper>
+      <div className="aspect-video w-full mb-4">
+        <Swiper
+          modules={[EffectFadeModule, EffectCubeModule, NavigationModule, AutoplayModule]}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          autoplay={{ delay: 3000 }}
+          loop={true}
+          navigation={true}
+          className="h-full w-full"
+          slidesPerView={1}
+          speed={800}
+        >
+          {slides.map((slide, idx) => (
+            <SwiperSlide key={`slide-${idx}`}>
+              <div className="w-full h-64">
+                {slide.type === 'image' && (
+                  <img 
+                    src={slide.src} 
+                    alt={`Slide ${idx}`} 
+                    className="w-full h-full object-contain"
+                  />
+                )}
+                {slide.type === 'video' && (
+                  <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline
+                    controls 
+                    src={slide.src} 
+                    className="w-full h-full object-contain"
+                  />
+                )}
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
       <h3 className="text-xl font-bold mt-2 text-center">{title}</h3>
       <a 
         href={link} 

@@ -1,9 +1,16 @@
+// src/components/Portfolio.tsx
 import React from 'react';
+import PortfolioCard from './PortfolioCard';
+import { portfolioData } from './portfolioData';
 
-export const Portfolio: React.FC = () => (
-  <div className="py-10 text-center">
-    <h2 className="text-3xl font-bold mb-4">Portfolio</h2>
-    <p className="text-lg">Here are some of my projects.</p>
-    {/* Project links/cards can go here */}
-  </div>
-);
+const Portfolio = () => {
+  return (
+    <div className="container mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+      {portfolioData.map((project, idx) => (
+        <PortfolioCard key={idx} {...project} />
+      ))}
+    </div>
+  );
+};
+
+export default Portfolio;

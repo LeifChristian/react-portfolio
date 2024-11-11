@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Home } from './components/Home';
 import { About } from './components/About';
-import { Portfolio } from './components/Portfolio';
+import Portfolio from './components/Portfolio';
 import CustomThemeProvider, { useThemeContext } from './ThemeProvider';
 // @ts-ignore
 import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';

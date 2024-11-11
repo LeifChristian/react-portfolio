@@ -1,5 +1,3 @@
-// src/components/portfolioData.ts
-
 export const portfolioData = [
     {
       title: 'Project 1',
@@ -16,10 +14,14 @@ export const portfolioData = [
     {
       title: 'Project 2',
       images: [
-        'https://picsum.photos/600/400?random=4',
-        'https://picsum.photos/600/400?random=5',
+        'https://picsum.photos/600/400?random=9',   // Different random numbers for unique images
+        'https://picsum.photos/600/400?random=10',
+        'https://picsum.photos/600/400?random=11',
+        'https://picsum.photos/600/400?random=12',
       ],
-      videoUrls: [],
+      videoUrls: [
+        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'  // Different video
+      ],
       link: 'https://example.com/project2',
     },
     {
@@ -35,4 +37,3 @@ export const portfolioData = [
       link: 'https://example.com/project3',
     },
   ];
-  

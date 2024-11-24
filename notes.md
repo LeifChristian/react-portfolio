@@ -15,3 +15,5 @@ MyPlaces
 Verizon Projects
 
 D-ID "Erica" nees new demo video 
+
+add music aspect as well I suppose

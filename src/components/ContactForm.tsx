@@ -1,33 +1,31 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { useThemeContext } from '../ThemeProvider'; 
 
 const ContactForm: React.FC = () => {
-
   const formRef = useRef<HTMLFormElement>(null);
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const { darkMode } = useThemeContext();
+  const [animate, setAnimate] = useState(false);
 
-  const {darkMode} = useThemeContext()
+  useEffect(() => {
+    setAnimate(true); // Trigger animation on component mount
 
-
-  useEffect(()=> {
     // alert(darkMode)
-
-  }, [darkMode])
+  }, [darkMode]);
 
   const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setIsSending(true);
     setStatusMessage(null);
 
     try {
       await emailjs.sendForm(
-        'service_lfh2gq2', // EmailJS service ID
-        'template_ia2g5do', // EmailJS template ID
+        'service_lfh2gq2',
+        'template_ia2g5do',
         formRef.current!,
-        'KMatYE8Uceuc1tja4' //  EmailJS public key
+        'KMatYE8Uceuc1tja4'
       );
       setStatusMessage('Message sent successfully!');
       formRef.current?.reset();
@@ -39,12 +37,12 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-md mt-4">
-      <div className="contact-form-3d-container">
+    <div className={`container mx-auto p-4 max-w-md mt-4`}>
+      <div className={`contact-form-3d-container ${animate ? 'animate-spin' : ''}`}>
         <h2 className="text-2xl font-bold mb-4 text-center dark:text-white pb-6">Let's connect!</h2>
-        <form ref={formRef} onSubmit={sendEmail} className="space-y-4" style={{border: '2px solid white'}}>
+        <form ref={formRef} onSubmit={sendEmail} className="space-y-4" style={{ border: '2px solid white' }}>
           <div>
-            <label htmlFor="user_name" className="block font-medium text-gray-700 dark:text-gray-200">
+            <label htmlFor="user_name" className={`block font-medium text-gray-400 dark:text-white`}>
               Name
             </label>
             <input
@@ -56,7 +54,7 @@ const ContactForm: React.FC = () => {
             />
           </div>
           <div>
-            <label htmlFor="user_email" className="block font-medium text-gray-700 dark:text-gray-200">
+            <label htmlFor="user_email" className="block font-medium text-gray-400 dark:text-gray-200">
               Email
             </label>
             <input
@@ -68,7 +66,7 @@ const ContactForm: React.FC = () => {
             />
           </div>
           <div>
-            <label htmlFor="message" className="block font-medium text-gray-700 dark:text-gray-200">
+            <label htmlFor="message" className="block font-medium text-gray-400 dark:text-gray-200">
               Message
             </label>
             <textarea

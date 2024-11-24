@@ -144,4 +144,18 @@ code {
   }
 }
 
+@keyframes spinY {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Apply the spin animation to the contact form container */
+.contact-form-3d-container {
+  animation: spinY 3s ease-in-out; /* 3-second spinning animation */
+  transform-style: preserve-3d; /* Ensures 3D perspective is preserved */
+ }
 

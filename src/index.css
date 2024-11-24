@@ -58,3 +58,90 @@ code {
 .animate-slideInBoing {
   animation: slideInBoing 2s ease-in-out forwards;
 }
+
+
+/* 3D box effect for contact form */
+.contact-form-3d-container {
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 1500px; /* Controls the depth of the 3D effect */
+  transform: rotateX(10deg) rotateY(-15deg); /* Adjust the tilt angle */
+}
+
+.contact-form-3d-container form {
+  transform: rotateX(5deg) rotateY(5deg) skewY(10deg); /* Skewing effect to make left side higher */
+  transform-origin: center center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Add shadow for 3D effect */
+  background-color: black; /* Light background color */
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.contact-form-3d-container form input,
+.contact-form-3d-container form textarea {
+  border-radius: 8px; /* Rounded inputs */
+}
+
+.contact-form-3d-container form button {
+  border-radius: 8px; /* Rounded button */
+}
+
+/* Swiper navigation buttons */
+.swiper-button-next, .swiper-button-prev {
+  position: absolute;  /* Ensure absolute positioning */
+  transform: translateY(90%);  /* Offset by half the height of the button */
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+  color: white!important;
+  border-radius: 20%;
+  padding: 30px;
+  font-size: 24px;  /* Adjust button size */
+  cursor: pointer;
+}
+
+/* Left button */
+.swiper-button-prev {
+  left: 10px;  /* Position on the left */
+}
+
+/* Right button */
+.swiper-button-next {
+  right: 10px;  /* Position on the right */
+}
+
+@media (max-width: 1600px) {
+  .swiper-button-next, .swiper-button-prev {
+    font-size: 18px;
+    padding: 20px;  /* Reduced padding */
+    transform: translateY(55%);  /* Adjust vertical position if needed */
+  }
+}
+
+/* Small tablets (up to 768px) */
+@media (max-width: 768px) {
+  .swiper-button-next, .swiper-button-prev {
+    font-size: 20px;
+    padding: 20px;  /* Reduced padding */
+    transform: translateY(75%);  /* Adjust vertical position if needed */
+  }
+}
+
+/* Large phones / small tablets (up to 600px) */
+@media (max-width: 640px) {
+  .swiper-button-next, .swiper-button-prev {
+    font-size: 18px;
+    padding: 20px;  /* Further reduced padding */
+    transform: translateY(-10%);  /* Adjust vertical position if needed */
+  }
+}
+
+/* Small phones (up to 480px) */
+@media (max-width: 480px) {
+  .swiper-button-next, .swiper-button-prev {
+    font-size: 12px;
+    padding: 10px;  /* Smallest padding */
+    transform: translateY(50%);  /* Adjust vertical position if needed */
+  }
+}
+
+

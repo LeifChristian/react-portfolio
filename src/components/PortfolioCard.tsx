@@ -106,7 +106,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
   return (
     <div className="rounded-3xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4 hover:w-100vw hover:h-100vh">
       <div className="aspect-video w-full mb-4 relative">
-        <Swiper
+        {/* <Swiper
           modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
           effect="fade"
           fadeEffect={{
@@ -165,7 +165,69 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
               </div>
             </SwiperSlide>
           ))}
-        </Swiper>
+        </Swiper> */}
+
+<Swiper
+  modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
+  effect="fade"
+  fadeEffect={{
+    crossFade: true,
+  }}
+  autoplay={{
+    delay: 6000,
+    disableOnInteraction: false,
+    pauseOnMouseEnter: true,
+    waitForTransition: true,
+  }}
+  loop={true}
+  navigation={true}
+  onSwiper={handleSwiperInit}
+  className="relative h-full w-full !px-120" // Adding `relative` class here
+  slidesPerView={1}
+  speed={800}
+  spaceBetween={0}
+  grabCursor={true}
+  watchSlidesProgress={true}
+  preventInteractionOnTransition={false}
+  allowTouchMove={true}
+  mousewheel={{
+    forceToAxis: true,
+  }}
+  keyboard={{
+    enabled: true,
+    onlyInViewport: true,
+  }}
+  touchRatio={1}
+  resistance={true}
+  resistanceRatio={0.85}
+>
+  {slides.map((slide, idx) => (
+    <SwiperSlide key={`slide-${idx}`}>
+      <div className="w-full h-64">
+        {slide.type === 'video' && (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            src={slide.src}
+            className="w-full h-full object-contain"
+          />
+        )}
+        {slide.type === 'image' && (
+          <img
+            src={slide.src}
+            alt={`Slide ${idx}`}
+            className="w-full h-full object-contain"
+            draggable={false}
+          />
+        )}
+      </div>
+    </SwiperSlide>
+  ))}
+</Swiper>
+
       </div>
       <h3 className="text-xl font-bold mt-2 text-center">{title}</h3>
       <a 

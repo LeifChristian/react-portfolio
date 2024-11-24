@@ -16,6 +16,9 @@ const pageLoadStyles = `
   .page-wrapper {
     position: relative;
     z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
   .page-wrapper::before {
@@ -58,7 +61,7 @@ function App() {
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500); // Reduced to match new animation duration
+    }, 1500);
 
     return () => {
       clearTimeout(timer);
@@ -74,6 +77,7 @@ function App() {
             origin-center
             perspective-1000
             ${isLoading ? 'animate-page-load' : ''}
+            flex-1 flex flex-col
           `}
           style={{
             transformOrigin: 'center center'
@@ -92,13 +96,12 @@ const MainContent = () => {
   const { toggleTheme, darkMode } = useThemeContext();
 
   return (
-    <div className={`min-h-screen w-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-300 text-black'}`}>
-      <header className={`p-4 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-blue-200'}`}>
+    <div className="h-screen flex flex-col">
+      <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300'}`}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Portfolio</h1>
           <nav className="flex items-center">
             <Link to="/" className="mr-4">Home</Link>
-            {/* <Link to="/about" className="mr-4">About</Link> */}
             <Link to="/portfolio" className="mr-4">Portfolio</Link>
             <Link to="/contact" className="mr-4">Contact</Link>
             <button onClick={toggleTheme} className="focus:outline-none">
@@ -111,15 +114,19 @@ const MainContent = () => {
           </nav>
         </div>
       </header>
-      <main className={`container ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          {/* <Route path="/about" element={<About />} /> */}
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/contact" element={<ContactForm />} />
-        </Routes>
+
+      <main className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}
+            style={{ marginBottom: "60px" }}> {/* Height of footer */}
+        <div className="container mx-auto">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/contact" element={<ContactForm />} />
+          </Routes>
+        </div>
       </main>
-      <footer className="p-4 bg-gray-800 text-white text-center">
+
+      <footer className={`fixed bottom-0 left-0 right-0 font-bold text-center p-5 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
         © 2024 Leif Christian
       </footer>
     </div>

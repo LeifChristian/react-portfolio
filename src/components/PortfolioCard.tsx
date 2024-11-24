@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperType } from 'swiper';
+import { useThemeContext } from '../ThemeProvider';
+
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -25,6 +27,8 @@ interface PortfolioCardProps {
 }
 
 const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls = [], link }) => {
+
+  const {darkMode} = useThemeContext()
   const swiperRef = useRef<SwiperType>();
   const autoplayTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -35,12 +39,14 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
 
   // Cleanup function to clear any pending timeouts
   useEffect(() => {
+
+
     return () => {
       if (autoplayTimeoutRef.current) {
         clearTimeout(autoplayTimeoutRef.current);
       }
     };
-  }, []);
+  }, [darkMode]);
 
   const handleSwiperInit = (swiper: SwiperType) => {
     swiperRef.current = swiper;
@@ -229,12 +235,12 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
 </Swiper>
 
       </div>
-      <h3 className="text-xl font-bold mt-2 text-center">{title}</h3>
+      <h3 className={`text-xl font-bold mt-2 text-center ${darkMode ? 'text-white': 'text-black'}`}>{title}</h3>
       <a 
         href={link} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="text-blue-500 hover:text-blue-700 underline block text-center mt-2"
+        className={`text-blue-500 hover:text-blue-700 underline block text-center mt-2 no-underline`}
       >
         View Project
       </a>

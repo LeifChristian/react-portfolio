@@ -30,3 +30,31 @@ code {
 .swiper-button-next::after {
   font-size: 30px !important;
 }
+
+
+.testClass {
+
+  background-color: rgb(91, 89, 89);
+}
+
+/* Keyframes for the animation */
+/* Keyframes for the animation */
+@keyframes slideInBoing {
+  0% {
+    transform: translateX(-100%) scale(0.8); /* Start off-screen to the left */
+  }
+  50% {
+    transform: translateX(20px) scale(1.2); /* Move slightly right and scale up for the boing */
+  }
+  70% {
+ /* Slight left to give the "boing" feel */
+  }
+  100% {
+    transform: translateX(0) scale(1); /* End up at original position with normal scale */
+  }
+}
+
+/* Apply animation */
+.animate-slideInBoing {
+  animation: slideInBoing 3s ease-in-out forwards;
+}

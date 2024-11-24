@@ -121,6 +121,15 @@ code {
   .swiper-button-next, .swiper-button-prev {
     font-size: 18px;
     padding: 20px;  /* Reduced padding */
+    transform: translateY(25%);  /* Adjust vertical position if needed */
+  }
+}
+
+
+@media (max-width: 1245px) {
+  .swiper-button-next, .swiper-button-prev {
+    font-size: 18px;
+    padding: 20px;  /* Reduced padding */
     transform: translateY(55%);  /* Adjust vertical position if needed */
   }
 }

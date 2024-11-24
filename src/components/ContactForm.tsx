@@ -8,12 +8,19 @@ const ContactForm: React.FC = () => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const { darkMode } = useThemeContext();
   const [animate, setAnimate] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    setAnimate(true); // Trigger animation on component mount
+    setTimeout(() => {
+      setAnimate(true);
+    }, 100);
 
-    // alert(darkMode)
-  }, [darkMode]);
+    const timer = setTimeout(() => {
+      setAnimate(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +45,31 @@ const ContactForm: React.FC = () => {
 
   return (
     <div className={`container mx-auto p-4 max-w-md mt-4`}>
-      <div className={`contact-form-3d-container ${animate ? 'animate-spin' : ''}`}>
-        <h2 className="text-2xl font-bold mb-4 text-center dark:text-white pb-6">Let's connect!</h2>
-        <form ref={formRef} onSubmit={sendEmail} className="space-y-4" style={{ border: '2px solid white' }}>
+      <h2 className="text-2xl font-bold mb-4 text-center dark:text-white pb-6">Let's connect!</h2>
+      
+      <div 
+        className={`contact-form-3d-container ${!isHovered ? 'contact-form-3d' : ''}`}
+        style={{ 
+          animation: animate ? 'spinY 3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+          transform: isHovered ? 'none' : undefined,
+          transition: 'transform 0.3s ease'
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <form 
+          ref={formRef} 
+          onSubmit={sendEmail} 
+          className="space-y-4"
+          style={{ 
+            border: '2px solid white',
+            transform: isHovered ? 'none' : undefined,
+            transition: 'all 0.3s ease',
+            filter: darkMode 
+              ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))' 
+              : 'drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))'
+          }}
+        >
           <div>
             <label htmlFor="user_name" className={`block font-medium text-gray-400 dark:text-white`}>
               Name

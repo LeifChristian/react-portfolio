@@ -60,30 +60,38 @@ code {
 }
 
 
-/* 3D box effect for contact form */
+/* Base styles that are always applied */
 .contact-form-3d-container {
   position: relative;
-  transform-style: preserve-3d;
-  perspective: 1500px; /* Controls the depth of the 3D effect */
-  transform: rotateX(10deg) rotateY(-15deg); /* Adjust the tilt angle */
+  transition: all 0.3s ease;
 }
 
 .contact-form-3d-container form {
-  transform: rotateX(5deg) rotateY(5deg) skewY(10deg); /* Skewing effect to make left side higher */
-  transform-origin: center center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Add shadow for 3D effect */
-  background-color: black; /* Light background color */
+  background-color: black;
   border-radius: 12px;
   padding: 1.5rem;
 }
 
 .contact-form-3d-container form input,
 .contact-form-3d-container form textarea {
-  border-radius: 8px; /* Rounded inputs */
+  border-radius: 8px;
 }
 
 .contact-form-3d-container form button {
-  border-radius: 8px; /* Rounded button */
+  border-radius: 8px;
+}
+
+/* 3D styles that will be toggled */
+.contact-form-3d {
+  transform-style: preserve-3d;
+  perspective: 1500px;
+  transform: rotateX(10deg) rotateY(-15deg);
+}
+
+.contact-form-3d form {
+  transform: rotateX(5deg) rotateY(5deg) skewY(10deg);
+  transform-origin: center center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Swiper navigation buttons */
@@ -148,11 +156,13 @@ code {
   0% {
     transform: rotateY(0deg);
   }
+  95% {
+    transform: rotateY(3600deg); /* 10 full rotations (360 * 10) */
+  }
   100% {
-    transform: rotateY(360deg);
+    transform: rotateY(3600deg); /* End at same position for smooth finish */
   }
 }
-
 /* Apply the spin animation to the contact form container */
 .contact-form-3d-container {
   animation: spinY 3s ease-in-out; /* 3-second spinning animation */

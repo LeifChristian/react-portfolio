@@ -39,7 +39,7 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-md mt-6">
+    <div className="container mx-auto p-4 max-w-md mt-4">
       <div className="contact-form-3d-container">
         <h2 className="text-2xl font-bold mb-4 text-center dark:text-white pb-6">Let's connect!</h2>
         <form ref={formRef} onSubmit={sendEmail} className="space-y-4" style={{border: '2px solid white'}}>

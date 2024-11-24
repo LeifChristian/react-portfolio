@@ -104,7 +104,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
   };
 
   return (
-    <div className="rounded-3xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4">
+    <div className="rounded-3xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4 hover:w-100vw hover:h-100vh">
       <div className="aspect-video w-full mb-4 relative">
         <Swiper
           modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}

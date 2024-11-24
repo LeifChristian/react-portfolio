@@ -14,7 +14,7 @@ export const Home: React.FC = () => {
   }, []);
 
   return (
-    <div className="text-center py-4">
+    <div className="text-center py-4" style={{width: '100vw', margin: 'auto'}}>
       <h2 className="text-4xl font-bold mb-8">
         Leif Christian
       </h2>

@@ -92,7 +92,7 @@ const MainContent = () => {
   const { toggleTheme, darkMode } = useThemeContext();
 
   return (
-    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-300 text-black'}`}>
+    <div className={`min-h-screen w-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-300 text-black'}`}>
       <header className={`p-4 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-blue-200'}`}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Portfolio</h1>
@@ -111,7 +111,7 @@ const MainContent = () => {
           </nav>
         </div>
       </header>
-      <main className={`flex-grow container mx-auto p-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}>
+      <main className={`container ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           {/* <Route path="/about" element={<About />} /> */}

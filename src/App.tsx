@@ -92,13 +92,13 @@ const MainContent = () => {
   const { toggleTheme, darkMode } = useThemeContext();
 
   return (
-    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-300 text-gray-800'}`}>
-      <header className={`p-4 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-blue-100'}`}>
+    <div className={`min-h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-300 text-black'}`}>
+      <header className={`p-4 shadow-md ${darkMode ? 'bg-gray-800' : 'bg-blue-200'}`}>
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">My Portfolio</h1>
           <nav className="flex items-center">
             <Link to="/" className="mr-4">Home</Link>
-            <Link to="/about" className="mr-4">About</Link>
+            {/* <Link to="/about" className="mr-4">About</Link> */}
             <Link to="/portfolio" className="mr-4">Portfolio</Link>
             <Link to="/contact" className="mr-4">Contact</Link>
             <button onClick={toggleTheme} className="focus:outline-none">
@@ -114,7 +114,7 @@ const MainContent = () => {
       <main className={`flex-grow container mx-auto p-4 ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
+          {/* <Route path="/about" element={<About />} /> */}
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/contact" element={<ContactForm />} />
         </Routes>

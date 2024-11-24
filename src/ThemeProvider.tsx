@@ -2,15 +2,21 @@ import React, { createContext, useContext, useMemo, useState, useEffect } from '
 import { createTheme, ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 
+
 interface ThemeContextProps {
   toggleTheme: () => void;
   darkMode: boolean;
+  toggleAnimate: () => void;
+  shouldAnimate: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextProps>({
   toggleTheme: () => {},
   darkMode: false,
+  toggleAnimate: () => {},
+shouldAnimate: true
 });
+
 
 export const useThemeContext = () => useContext(ThemeContext);
 
@@ -28,6 +34,7 @@ const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   })();
 
   const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const [shouldAnimate, setShouldAnimate] = useState(initialDarkMode);
 
   // Update the theme in localStorage and on the <html> element when darkMode changes
   useEffect(() => {
@@ -43,6 +50,10 @@ const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDarkMode(prevMode => !prevMode);
   };
 
+  const toggleAnimate = () => {
+    setShouldAnimate(prevState => !prevState);
+  };
+
   const theme = useMemo(
     () =>
       createTheme({
@@ -54,7 +65,7 @@ const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   return (
-    <ThemeContext.Provider value={{ toggleTheme, darkMode }}>
+    <ThemeContext.Provider value={{ toggleTheme, darkMode, toggleAnimate, shouldAnimate }}>
       <MUIThemeProvider theme={theme}>
         <StyledThemeProvider theme={theme}>{children}</StyledThemeProvider>
       </MUIThemeProvider>

@@ -126,8 +126,9 @@ const MainContent = () => {
         </div>
       </main>
 
-      <footer className={`fixed bottom-0 left-0 right-0 font-bold text-center p-5 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
-        © 2024 Leif Christian
+      <footer className={`fixed bottom-0 left-0 right-0  text-center p-5 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
+        © 2024 Leif Christian |
+        <a href="http://www.github.com/leifchristian" target='_blank' className='text-blue-400 hover:text-blue-200'>  Github</a>
       </footer>
     </div>
   );

@@ -24,9 +24,10 @@ interface PortfolioCardProps {
   images: string[];
   videoUrls?: string[];
   link: string;
+  description: string;
 }
 
-const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls = [], link }) => {
+const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls = [], link, description }) => {
 
   const {darkMode} = useThemeContext()
   const swiperRef = useRef<SwiperType>();
@@ -175,15 +176,18 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
 </Swiper>
 
       </div>
-      <h3 className={`text-xl font-bold mt-2 text-center ${darkMode ? 'text-white': 'text-black'}`}>{title}</h3>
+      <span className=''>
+      {/* <div className={`text-xl font-bold mt-2 text-center ${darkMode ? 'text-white': 'text-black'}`}>{title}</div> */}
       <a 
         href={link} 
         target="_blank" 
         rel="noopener noreferrer" 
         className={`text-blue-500 hover:text-blue-700 underline block text-center mt-2 no-underline`}
       >
-        View Project
+        {title}
       </a>
+      <p className={`${darkMode ? 'text-white' : 'text-black'} text-center`}>{description}</p>
+      </span>
     </div>
   );
 };

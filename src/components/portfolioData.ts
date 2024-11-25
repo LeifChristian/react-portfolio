@@ -10,6 +10,7 @@ export const portfolioData = [
         'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
       ],
       link: 'https://example.com/project1',
+      description: 'Description of thing number 1'
     },
     {
       title: 'Project 2',
@@ -23,6 +24,7 @@ export const portfolioData = [
         'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'  // Different video
       ],
       link: 'https://example.com/project2',
+      description: 'Description of thing number 2'
     },
     {
       title: 'Project 3',
@@ -35,5 +37,6 @@ export const portfolioData = [
         'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
       ],
       link: 'https://example.com/project3',
+      description: 'Description of thing number 3'
     },
   ];

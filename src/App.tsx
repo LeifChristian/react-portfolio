@@ -98,13 +98,13 @@ const MainContent = () => {
   return (
     <div className="h-screen flex flex-col">
       <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300'}`}>
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">My Portfolio</h1>
+        <div className="container mx-auto flex md:justify-between md:justify-between sm:justify-around items-center">
+
           <nav className="flex items-center">
             <Link to="/" className="mr-4">Home</Link>
             <Link to="/portfolio" className="mr-4">Portfolio</Link>
             <Link to="/contact" className="mr-4">Contact</Link>
-            <button onClick={toggleTheme} className="focus:outline-none">
+            <button onClick={toggleTheme} className="focus:outline-none flex-end">
               {darkMode ? (
                 <SunIcon className="w-6 h-6 text-yellow-400" aria-label="Switch to Light Mode" />
               ) : (

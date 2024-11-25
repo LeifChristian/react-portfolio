@@ -3,6 +3,8 @@ import { useThemeContext } from '../ThemeProvider';
 import leif from '../assets/Leif-Christian.png';
 import background from '../assets/stock1.png';
 
+let hasAnimated = false;
+
 export const Home: React.FC = () => {
   const { darkMode } = useThemeContext();
   const [isAnimated, setIsAnimated] = useState(false);
@@ -20,9 +22,14 @@ export const Home: React.FC = () => {
     };
 
     window.addEventListener('resize', handleResize);
-    setTimeout(() => {
-      setIsAnimated(true);
-    }, 100);
+
+  if (!hasAnimated) {
+      setTimeout(() => {
+        setIsAnimated(true);
+        hasAnimated = true;
+      }, 1000);
+    }
+
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -79,7 +86,7 @@ export const Home: React.FC = () => {
             src={leif}
             alt="Leif Christian"
             className={`h-full w-auto object-contain transition-all duration-1000 ${
-              isAnimated ? 'animate-slideInBoing' : 'transform -translate-x-full scale-90'
+              isAnimated ? 'animate-slideInBoing' : 'transform translate-x-0 scale-90'
             }`}
           />
         </div>

@@ -127,7 +127,7 @@ code {
 
 
 @media (max-width: 1245px) {
-  .swiper-button-next, .swiper-button-prev {
+  .swiper-button-next, .swiper-buttoan-prev {
     font-size: 18px;
     padding: 20px;  /* Reduced padding */
     transform: translateY(55%);  /* Adjust vertical position if needed */

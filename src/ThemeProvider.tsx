@@ -18,6 +18,7 @@ shouldAnimate: true
 });
 
 
+
 export const useThemeContext = () => useContext(ThemeContext);
 
 const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

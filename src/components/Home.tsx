@@ -6,11 +6,25 @@ import background from '../assets/stock1.png';
 export const Home: React.FC = () => {
   const { darkMode } = useThemeContext();
   const [isAnimated, setIsAnimated] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState({
+    width: window.innerWidth <= 360,
+    height: window.innerHeight <= 600
+  });
 
   useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen({
+        width: window.innerWidth <= 360,
+        height: window.innerHeight <= 600
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
     setTimeout(() => {
       setIsAnimated(true);
     }, 100);
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const containerStyle: React.CSSProperties = {
@@ -24,15 +38,38 @@ export const Home: React.FC = () => {
     position: 'relative'
   };
 
+  const avatarContainerStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    top: isSmallScreen.height ? '15vh' : isSmallScreen.width ? '25vh' : '20vh',
+    zIndex: 1,
+    width: 'auto',
+    height: isSmallScreen.height ? '25vh' : isSmallScreen.width ? '30vh' : '40vh'
+  };
+
+  const titleStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    top: isSmallScreen.height ? '2vh' : isSmallScreen.width ? '5vh' : '10vh',
+    fontSize: (isSmallScreen.width || isSmallScreen.height) ? '1.875rem' : '2.25rem',
+    textWrap: 'nowrap',
+    zIndex: 1
+  };
+
+  const isMobile = isSmallScreen.width || isSmallScreen.height;
+
   return (
     <div style={containerStyle}>
-      <div className={`text-center py-4 relative ${darkMode ? 'text-white bg-black/50' : 'text-black bg-white/50'}`}>
-        <h2 className="text-4xl font-bold mb-8">
+      <div className={`text-center py-4 relative ${darkMode ? 'text-white bg-black/50' : 'text-black bg-white/50'} ${isMobile ? 'px-2' : ''}`}>
+        <h2 style={titleStyle} className="font-bold">
           Leif Christian
         </h2>
+        <div className={`${isSmallScreen.height ? 'h-[4vh]' : isMobile ? 'h-[6vh]' : 'h-[8vh]'}`} />
 
-        <div
-          className={`inline-block ${
+        <div style={avatarContainerStyle}
+          className={`${
             darkMode
               ? 'drop-shadow-[0_10px_12px_rgba(255,255,255,1)]'
               : 'drop-shadow-[0_8px_24px_rgba(1,1,10,0.6)]'
@@ -41,13 +78,15 @@ export const Home: React.FC = () => {
           <img
             src={leif}
             alt="Leif Christian"
-            className={`h-[40vh] object-contain transition-all duration-1000 ${
+            className={`h-full w-auto object-contain transition-all duration-1000 ${
               isAnimated ? 'animate-slideInBoing' : 'transform -translate-x-full scale-90'
             }`}
           />
         </div>
+        <div className={`${isSmallScreen.height ? 'h-[25vh]' : isMobile ? 'h-[30vh]' : 'h-[40vh]'}`} />
 
-        <p className="text-lg px-4 max-w-[800px] mx-auto mt-8 leading-relaxed">
+        <p className={`${isMobile ? 'text-base px-2' : 'text-lg px-4'} max-w-[800px] mx-auto mt-8 leading-relaxed`}>
+          {/* Content remains the same */}
           <span className="block mb-4">
             Leif Christian grew up in Paradise Valley, Montana, and is a lover of
             music, culture, and the outdoors. Leif has a background in audio software

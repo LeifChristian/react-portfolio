@@ -111,85 +111,88 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
   };
 
   return (
-    <div className="rounded-3xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4 hover:w-100vw hover:h-100vh">
-      <div className="aspect-video w-full mb-4 relative">
-
-<Swiper
-  modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
-  effect="fade"
-  fadeEffect={{
-    crossFade: true,
-  }}
-  autoplay={{
-    delay: 6000,
-    disableOnInteraction: false,
-    pauseOnMouseEnter: true,
-    waitForTransition: true,
-  }}
-  loop={true}
-  navigation={true}
-  onSwiper={handleSwiperInit}
-  className="relative h-full w-full !px-120" // Adding `relative` class here
-  slidesPerView={1}
-  speed={800}
-  spaceBetween={0}
-  grabCursor={true}
-  watchSlidesProgress={true}
-  preventInteractionOnTransition={false}
-  allowTouchMove={true}
-  mousewheel={{
-    forceToAxis: true,
-  }}
-  keyboard={{
-    enabled: true,
-    onlyInViewport: true,
-  }}
-  touchRatio={1}
-  resistance={true}
-  resistanceRatio={0.85}
->
-  {slides.map((slide, idx) => (
-    <SwiperSlide key={`slide-${idx}`}>
-      <div className="w-full h-64">
-        {slide.type === 'video' && (
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            controls
-            src={slide.src}
-            className="w-full h-full object-contain"
-          />
-        )}
-        {slide.type === 'image' && (
-          <img
-            src={slide.src}
-            alt={`Slide ${idx}`}
-            className="w-full h-full object-contain" style={{borderRadius: '2em'}}
-            draggable={false} 
-          />
-        )}
+    <div className="group relative z-0 hover:z-50">
+      <div className="rounded-3xl shadow-lg overflow-hidden bg-white dark:bg-gray-800 p-4 transition-all duration-300 ease-in-out transform group-hover:scale-[1.2] group-hover:shadow-2xl group-hover:mt-10">
+        <div className="aspect-video w-full mb-4 relative">
+          <Swiper
+            modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
+            effect="fade"
+            fadeEffect={{
+              crossFade: true,
+            }}
+            autoplay={{
+              delay: 6000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+              waitForTransition: true,
+            }}
+            loop={true}
+            navigation={true}
+            onSwiper={handleSwiperInit}
+            className="relative h-full w-full !px-120"
+            slidesPerView={1}
+            speed={800}
+            spaceBetween={0}
+            grabCursor={true}
+            watchSlidesProgress={true}
+            preventInteractionOnTransition={false}
+            allowTouchMove={true}
+            mousewheel={{
+              forceToAxis: true,
+            }}
+            keyboard={{
+              enabled: true,
+              onlyInViewport: true,
+            }}
+            touchRatio={1}
+            resistance={true}
+            resistanceRatio={0.85}
+          >
+            {slides.map((slide, idx) => (
+              <SwiperSlide key={`slide-${idx}`}>
+                <div className="w-full h-64">
+                  {slide.type === 'video' && (
+                    <video
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      controls
+                      src={slide.src}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                  {slide.type === 'image' && (
+                    <img
+                      src={slide.src}
+                      alt={`Slide ${idx}`}
+                      className="w-full h-full object-contain"
+                      style={{ borderRadius: '2em' }}
+                      draggable={false}
+                    />
+                  )}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+        <span className="opacity-100 group-hover:opacity-100 transition-opacity duration-300">
+          <a 
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-700 block text-center mt-2 no-underline"
+          >
+            {title}
+          </a>
+          <p className={`${darkMode ? 'text-white' : 'text-black'} text-center`}>
+            {description}
+          </p>
+        </span>
       </div>
-    </SwiperSlide>
-  ))}
-</Swiper>
-
-      </div>
-      <span className=''>
-      {/* <div className={`text-xl font-bold mt-2 text-center ${darkMode ? 'text-white': 'text-black'}`}>{title}</div> */}
-      <a 
-        href={link} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className={`text-blue-500 hover:text-blue-700 underline block text-center mt-2 no-underline`}
-      >
-        {title}
-      </a>
-      <p className={`${darkMode ? 'text-white' : 'text-black'} text-center`}>{description}</p>
-      </span>
     </div>
   );
+
 };
 
 export default PortfolioCard;

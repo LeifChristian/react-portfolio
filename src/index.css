@@ -178,3 +178,8 @@ code {
   transform-style: preserve-3d; /* Ensures 3D perspective is preserved */
  }
 
+
+ @font-face {
+  font-family: Roboto;
+  src: url('./assets/fonts/Roboto-Regular.ttf');
+ }

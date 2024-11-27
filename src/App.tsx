@@ -7,6 +7,7 @@ import Portfolio from './components/Portfolio';
 import CustomThemeProvider, { useThemeContext } from './ThemeProvider';
 // @ts-ignore
 import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';
+import { Github, Linkedin } from 'lucide-react';
 
 const pageLoadStyles = `
   .perspective-1000 {
@@ -99,7 +100,6 @@ const MainContent = () => {
     <div className="h-screen flex flex-col">
       <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300'}`}>
         <div className="container mx-auto flex md:justify-between md:justify-between sm:justify-around items-center">
-
           <nav className="flex items-center">
             <Link to="/" className="mr-4">Home</Link>
             <Link to="/portfolio" className="mr-4">Portfolio</Link>
@@ -116,7 +116,7 @@ const MainContent = () => {
       </header>
 
       <main className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}
-            style={{ marginBottom: "60px" }}> {/* Height of footer */}
+            style={{ marginBottom: "60px" }}> 
         <div className="container mx-auto">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -126,9 +126,34 @@ const MainContent = () => {
         </div>
       </main>
 
-      <footer className={`fixed bottom-0 left-0 right-0  text-center p-5 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
-        © 2024 Leif Christian |
-        <a href="http://www.github.com/leifchristian" target='_blank' className='text-blue-400 hover:text-blue-200'>  Github</a>
+      <footer className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
+        <div className="flex items-center justify-center gap-4">
+          <span>© 2024 Leif Christian</span>
+          <div className="flex gap-3">
+            <a 
+              href="http://www.github.com/leifchristian" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Github 
+                size={24} 
+                className={darkMode ? "text-white" : "text-black"}
+              />
+            </a>
+            <a 
+              href="https://www.linkedin.com/in/leifchristian" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <Linkedin 
+                size={24} 
+                className={darkMode ? "text-white" : "text-black"}
+              />
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );

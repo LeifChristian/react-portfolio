@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useThemeContext } from '../ThemeProvider';
+import { useNavigate } from 'react-router-dom';
 import leif from '../assets/Leif-Christian.png';
 import background from '../assets/stock1.png';
 
 let hasAnimated = false;
 
 export const Home: React.FC = () => {
+  const navigate = useNavigate();
   const { darkMode } = useThemeContext();
   const [isAnimated, setIsAnimated] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState({
@@ -30,9 +32,19 @@ export const Home: React.FC = () => {
       }, 1000);
     }
 
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    // Set up redirect timer
+    const redirectTimer = setTimeout(() => {
+      navigate('/portfolio');
+    }, 20000);
 
+    // Clean up timers and event listeners
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(redirectTimer);
+    };
+  }, [navigate]);
+
+  // Rest of the component remains the same...
   const containerStyle: React.CSSProperties = {
     backgroundImage: `url(${background})`,
     backgroundSize: 'cover',

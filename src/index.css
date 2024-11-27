@@ -151,3 +151,12 @@ code {
   font-family: Roboto;
   src: url('./assets/fonts/Roboto-Regular.ttf');
 }
+
+.text-shadow-light {
+  text-shadow: 
+    -1px -1px 0 #60A5FA,
+    1px -1px 0 #60A5FA,
+    -1px 1px 0 #60A5FA,
+    1px 1px 0 #60A5FA,
+    2px 2px 4px rgba(0,0,0,0.3);
+}

@@ -81,7 +81,7 @@ export const Home: React.FC = () => {
   return (
     <div className="relative w-full">
       <div style={containerStyle}>
-        <div className={`text-center py-4 relative ${darkMode ? 'text-white bg-black/50' : 'text-black bg-white/50'} ${isMobile ? 'px-2' : ''}`}>
+      <div className={`text-center py-4 relative ${darkMode ? 'text-white bg-black/50' : 'text-black bg-gray-400/70'} ${isMobile ? 'px-2' : ''}`}>
           <h2 style={titleStyle} className="font-bold">
             Leif Christian
           </h2>
@@ -104,7 +104,7 @@ export const Home: React.FC = () => {
           </div>
           <div className={`${isSmallScreen.height ? 'h-[25vh]' : isMobile ? 'h-[30vh]' : 'h-[40vh]'}`} />
 
-          <p className={`${isMobile ? 'text-base px-2' : 'text-lg px-4'} max-w-[800px] mx-auto mt-8 leading-relaxed`}>
+          <p className={`${isMobile ? 'text-base px-2' : 'text-lg px-4'} max-w-[800px] mx-auto mt-8 leading-relaxed ${!darkMode && 'text-shadow-light'}`}>
             <span className="block mb-4 font-bold">
               Leif Christian grew up in Paradise Valley, Montana, and is a lover of
               music, culture, and the outdoors. Leif has a background in audio software
@@ -114,7 +114,7 @@ export const Home: React.FC = () => {
             </span>
             
             <span className="block mb-4 font-bold">
-              Leif has collaborated with renowned companies such as Verizon, Magic
+              Leif has worked with renowned companies such as Verizon, Magic
               Mountain Roadrunner Sports, Cedar Fair, and United Locating Services, a
               utility locating company serving all of Austin, Dallas, Houston, and
               Tulsa, Oklahoma.
@@ -122,10 +122,8 @@ export const Home: React.FC = () => {
             
             <span className="block font-bold">
               Leif is passionate about music, the outdoors, Spanish language and
-              culture, and music performance. Leif performs around Montana as a
-              guitarist and vocalist in his rock power trio. Leif brings a wide range
-              of technical skills and his passion for building engaging user
-              experiences to the team.
+              hispanic culture, and music performance. Leif performs around Montana as a
+              guitarist and vocalist in his rock power trio.
             </span>
           </p>
         </div>

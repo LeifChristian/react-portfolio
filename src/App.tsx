@@ -98,7 +98,7 @@ const MainContent = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300'}`}>
+      <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-400'}`}>
         <div className="container mx-auto flex md:justify-between md:justify-between sm:justify-around items-center">
           <nav className="flex items-center">
             <Link to="/" className="mr-4">Home</Link>
@@ -115,7 +115,7 @@ const MainContent = () => {
         </div>
       </header>
 
-      <main className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-300'}`}
+      <main className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-500'}`}
             style={{ marginBottom: "60px" }}> 
         <div className="container mx-auto">
           <Routes>
@@ -126,7 +126,7 @@ const MainContent = () => {
         </div>
       </main>
 
-      <footer className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-300 text-black'}`}>
+      <footer className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-400 text-black'}`}>
         <div className="flex items-center justify-center gap-4">
           <span>© 2024 Leif Christian</span>
           <div className="flex gap-3">

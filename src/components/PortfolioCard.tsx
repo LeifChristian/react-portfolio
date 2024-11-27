@@ -193,7 +193,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700 block text-center mt-2 no-underline"
+            className="text-blue-500 text-lg font-bold hover:text-blue-700 block text-center mt-2 no-underline"
           >
             {title}
           </a>

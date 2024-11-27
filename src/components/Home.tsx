@@ -105,7 +105,7 @@ export const Home: React.FC = () => {
           <div className={`${isSmallScreen.height ? 'h-[25vh]' : isMobile ? 'h-[30vh]' : 'h-[40vh]'}`} />
 
           <p className={`${isMobile ? 'text-base px-2' : 'text-lg px-4'} max-w-[800px] mx-auto mt-8 leading-relaxed`}>
-            <span className="block mb-4">
+            <span className="block mb-4 font-bold">
               Leif Christian grew up in Paradise Valley, Montana, and is a lover of
               music, culture, and the outdoors. Leif has a background in audio software
               and construction and transitioned into programming in 2018. Specializing
@@ -113,14 +113,14 @@ export const Home: React.FC = () => {
               things JavaScript.
             </span>
             
-            <span className="block mb-4">
+            <span className="block mb-4 font-bold">
               Leif has collaborated with renowned companies such as Verizon, Magic
               Mountain Roadrunner Sports, Cedar Fair, and United Locating Services, a
               utility locating company serving all of Austin, Dallas, Houston, and
               Tulsa, Oklahoma.
             </span>
             
-            <span className="block">
+            <span className="block font-bold">
               Leif is passionate about music, the outdoors, Spanish language and
               culture, and music performance. Leif performs around Montana as a
               guitarist and vocalist in his rock power trio. Leif brings a wide range

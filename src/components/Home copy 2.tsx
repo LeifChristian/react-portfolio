@@ -40,7 +40,7 @@ export const Home: React.FC = () => {
     backgroundRepeat: 'no-repeat',
     backgroundAttachment: 'fixed',
     minHeight: '100vh',
-    minWidth: '99vw',
+    minWidth: '100vw',
     position: 'absolute',
     left: 0
   };

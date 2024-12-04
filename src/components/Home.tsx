@@ -35,7 +35,7 @@ export const Home: React.FC = () => {
     // Set up redirect timer
     const redirectTimer = setTimeout(() => {
       navigate('/portfolio');
-    }, 20000);
+    }, 14000);
 
     // Clean up timers and event listeners
     return () => {

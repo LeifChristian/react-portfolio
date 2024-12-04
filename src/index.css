@@ -38,7 +38,7 @@ code {
 
 /* Apply animation */
 .animate-slideInBoing {
-  animation: slideInBoing 2s ease-in-out forwards;
+  animation: slideInBoing 3s ease-in-out forwards;
 }
 
 /* Base styles that are always applied */

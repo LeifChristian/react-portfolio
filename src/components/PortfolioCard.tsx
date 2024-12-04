@@ -35,7 +35,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
   const getVideoEmbed = (url: string) => {
     const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^?&]+)/);
     if (youtubeMatch) {
-      return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&mute=1`;
     }
     return url;
   };

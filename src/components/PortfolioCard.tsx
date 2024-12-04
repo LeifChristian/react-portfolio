@@ -157,6 +157,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({ title, images, videoUrls 
                 <div className="w-full h-64">
                   {slide.type === 'video' && isYouTubeUrl(slide.src) ? (
                     <iframe
+                    title="project previews"
                       src={slide.src}
                       className="w-full h-full object-contain"
                       style={{ borderRadius: '2em' }}

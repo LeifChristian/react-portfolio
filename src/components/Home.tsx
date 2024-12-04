@@ -106,26 +106,21 @@ export const Home: React.FC = () => {
 
           <p className={`${isMobile ? 'text-base px-2' : 'text-lg px-4'} max-w-[800px] mx-auto mt-8 leading-relaxed ${!darkMode && 'text-shadow-light'}`}>
             <span className="block mb-4 font-bold">
-              Leif Christian grew up in Paradise Valley, Montana, and is a lover of
-              music, culture, and the outdoors. Leif has a background in audio software
-              and construction and transitioned into programming in 2018. Specializing
-              in technologies like Node.js, Vue, React, React Native, Electron, and all
-              things JavaScript.
+            Leif began his career as a software developer in 2018 specializing in React, Node.js, Vue, React Native, Electron and all things JavaScript and has since built hundreds of full stack websites, microservices, tools and interactive applications.{"\n"}
+
             </span>
             
             <span className="block mb-4 font-bold">
-              Leif has worked with renowned companies such as Verizon, Magic
-              Mountain Roadrunner Sports, Cedar Fair, and United Locating Services, a
-              utility locating company serving all of Austin, Dallas, Houston, and
-              Tulsa, Oklahoma.
+            Leif has collaborated with renowned companies such as Verizon, Magic Mountain, Roadrunner Sports, Cedar Fair and many others to build robust, performant client facing apps to exacting specifications, working teams to refine and deliver high quality software solutions. Leif led a redesign of the client dashboard for United locating Services, a utility locating company handling all 811 tickets for the cities of Austin, Dallas, Houston and Tulsa, Oklahoma. Leif is active in the LLM space, and pioneered a voice based LLM chatbot many months before the release of popular voice mode LLM systems. 
             </span>
             
             <span className="block font-bold">
-              Leif is passionate about music, the outdoors, Spanish language and
-              hispanic culture, and music performance. Leif performs around Montana as a
-              guitarist and vocalist in his rock power trio.
+            Leif Christian grew up in Paradise Valley, Montana, and is a lover of music, culture and the outdoors.  
+            He is passionate about music, ans is a professionally trained classical pianist and electric guitarist. 
+            In his free time, he performs with various ensembles, and with his rock power trio, Ticket Sauce Trio.
             </span>
           </p>
+
         </div>
       </div>
     </div>

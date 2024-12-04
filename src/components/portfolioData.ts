@@ -2,9 +2,9 @@ export const portfolioData = [
   {
     title: 'Hustle Fundraising (React, MongoDB)',
     images: [
-      'https://picsum.photos/600/400?random=1',
-      'https://picsum.photos/600/400?random=2',
-      'https://picsum.photos/600/400?random=3',
+      // 'https://picsum.photos/600/400?random=1',
+      // 'https://picsum.photos/600/400?random=2',
+      // 'https://picsum.photos/600/400?random=3',
     ],
     videoUrls: [
       'https://www.youtube.com/embed/V-ySIouF6fQ'  // Note the 'embed' in the URL
@@ -15,10 +15,10 @@ export const portfolioData = [
   {
     title: 'MyPlaces (React Native)',
     images: [
-      'https://picsum.photos/600/400?random=9',
-      'https://picsum.photos/600/400?random=10',
-      'https://picsum.photos/600/400?random=11',
-      'https://picsum.photos/600/400?random=12',
+      // 'https://picsum.photos/600/400?random=9',
+      // 'https://picsum.photos/600/400?random=10',
+      // 'https://picsum.photos/600/400?random=11',
+      // 'https://picsum.photos/600/400?random=12',
     ],
     videoUrls: [
       'https://www.youtube.com/embed/9Q0JQhoIebA'  // Note the 'embed' in the URL
@@ -29,9 +29,9 @@ export const portfolioData = [
   {
     title: 'File Explorer (Vue.js, Electron)',
     images: [
-      'https://picsum.photos/600/400?random=6',
-      'https://picsum.photos/600/400?random=7',
-      'https://picsum.photos/600/400?random=8',
+      // 'https://picsum.photos/600/400?random=6',
+      // 'https://picsum.photos/600/400?random=7',
+      // 'https://picsum.photos/600/400?random=8',
     ],
     videoUrls: [
       'https://www.youtube.com/embed/2cH0N8azup4'  // Note the 'embed' in the URL

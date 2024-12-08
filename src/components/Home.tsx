@@ -116,7 +116,7 @@ export const Home: React.FC = () => {
             
             <span className="block font-bold">
             Leif Christian grew up in Paradise Valley, Montana, and is a lover of music, culture and the outdoors.  
-            He is passionate about music, ans is a professionally trained classical pianist and electric guitarist. 
+            He is passionate about music, and is a professionally trained classical pianist and electric guitarist. 
             In his free time, he performs with various ensembles, and with his rock power trio, Ticket Sauce Trio.
             </span>
           </p>

@@ -43,7 +43,7 @@
 
 export const portfolioData = [
   {
-    title: 'AI Assistant Chatbot (OpenAI APIs, React, Express, Node.js)',
+    title: 'Realtime Data AI Voice Assistant (OpenAI, APIs, React, Node.js)',
     images: [],
     videoUrls: [
       'https://www.youtube.com/embed/1MzdpzK6kg4'
@@ -52,7 +52,7 @@ export const portfolioData = [
     description: 'Voice-enabled AI assistant using OpenAI API with real-time data retrieval, speech-to-text, and TTS capabilities. Features multiple conversation threads, image generation and analysis.'
   },
   {
-    title: 'Hustle Fundraising (MongoDB, Express, React, Node.js, Tailwind CSS)',
+    title: 'Hustle Fundraising (MongoDB, Express, React, Node.js, Tailwind)',
     images: [],
     videoUrls: [
       'https://www.youtube.com/embed/V-ySIouF6fQ'

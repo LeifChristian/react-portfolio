@@ -43,16 +43,16 @@
 
 export const portfolioData = [
   {
-    title: 'AI Assistant Chatbot (OpenAI, Node.js)',
+    title: 'AI Assistant Chatbot (OpenAI APIs, React, Express, Node.js)',
     images: [],
     videoUrls: [
       'https://www.youtube.com/embed/1MzdpzK6kg4'
     ],
-    link: 'https://github.com/LeifChristian/your-repo-here',
-    description: 'Voice-enabled AI assistant using OpenAI API with real-time data retrieval, speech-to-text, and TTS capabilities. Features multiple conversation threads and image analysis.'
+    link: 'https://github.com/LeifChristian/GPT-speech-realtime-data',
+    description: 'Voice-enabled AI assistant using OpenAI API with real-time data retrieval, speech-to-text, and TTS capabilities. Features multiple conversation threads, image generation and analysis.'
   },
   {
-    title: 'Hustle Fundraising (React, MongoDB)',
+    title: 'Hustle Fundraising (MongoDB, Express, React, Node.js, Tailwind CSS)',
     images: [],
     videoUrls: [
       'https://www.youtube.com/embed/V-ySIouF6fQ'

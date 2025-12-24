@@ -826,27 +826,6 @@ export const Setlist: React.FC = () => {
           <h1 className="text-3xl font-bold">Setlist</h1>
           {!isEditing ? (
             <div className="flex gap-2 items-center">
-              {/* Database Toggle */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                <Database size={16} className={useDB ? (darkMode ? 'text-green-400' : 'text-green-600') : (darkMode ? 'text-gray-400' : 'text-gray-600')} />
-                <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {useDB ? 'DB' : 'Local'}
-                </span>
-                <button
-                  onClick={() => setUseDB(!useDB)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    useDB
-                      ? darkMode ? 'bg-green-600' : 'bg-green-500'
-                      : darkMode ? 'bg-gray-600' : 'bg-gray-400'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      useDB ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
               {dbLoading && (
                 <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
               )}

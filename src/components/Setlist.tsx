@@ -87,11 +87,11 @@ export const Setlist: React.FC = () => {
   }, []);
 
   // Load setlist when authenticated and user is selected
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isAuthenticated && selectedUser) {
       loadSetlist();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, selectedUser]);
 
   // Load notes when authenticated and user is selected

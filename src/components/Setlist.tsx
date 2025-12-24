@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -87,12 +87,11 @@ export const Setlist: React.FC = () => {
   }, []);
 
   // Load setlist when authenticated and user is selected
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isAuthenticated && selectedUser) {
       loadSetlist();
     }
-  }, [isAuthenticated, selectedUser]);
+  }, [isAuthenticated, selectedUser, loadSetlist]);
 
   // Load notes when authenticated and user is selected
   useEffect(() => {
@@ -113,8 +112,7 @@ export const Setlist: React.FC = () => {
         notesSubscription.unsubscribe();
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, selectedUser]);
+  }, [isAuthenticated, selectedUser, loadNotes]);
 
   // Default setlist content (only used if localStorage is empty)
   const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
@@ -234,13 +232,13 @@ export const Setlist: React.FC = () => {
   };
 
   // Load setlist from localStorage or DB based on toggle
-  const loadSetlist = async () => {
+  const loadSetlist = useCallback(async () => {
     if (useDB) {
       await loadSetlistFromDB();
     } else {
       loadSetlistFromLocal();
     }
-  };
+  }, [useDB]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,7 +285,7 @@ export const Setlist: React.FC = () => {
     loadNotes();
   };
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     setNotesLoading(true);
     try {
       const { data, error } = await supabase
@@ -303,7 +301,7 @@ export const Setlist: React.FC = () => {
     } finally {
       setNotesLoading(false);
     }
-  };
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

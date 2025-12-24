@@ -4,7 +4,7 @@ import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useThemeContext } from '../ThemeProvider';
-import { Edit2, Save, X, Download, Trash2, Plus, Database, Send } from 'lucide-react';
+import { Edit2, Save, X, Download, Trash2, Plus, Send } from 'lucide-react';
 import { supabase, Song as SupabaseSong, Note } from '../lib/supabase';
 
 const SETLIST_STORAGE_KEY = 'setlist_content';

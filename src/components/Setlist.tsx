@@ -4,11 +4,12 @@ import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useThemeContext } from '../ThemeProvider';
-import { Edit2, Save, X, Download, Trash2, Plus, Database } from 'lucide-react';
-import { supabase, Song as SupabaseSong } from '../lib/supabase';
+import { Edit2, Save, X, Download, Trash2, Plus, Database, Send } from 'lucide-react';
+import { supabase, Song as SupabaseSong, Note } from '../lib/supabase';
 
 const SETLIST_STORAGE_KEY = 'setlist_content';
 const SETLIST_PASSWORD_HASH_KEY = 'setlist_password_hash';
+const SETLIST_USER_KEY = 'setlist_user';
 
 export const Setlist: React.FC = () => {
   const { darkMode } = useThemeContext();
@@ -24,6 +25,11 @@ export const Setlist: React.FC = () => {
   const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
   const [useDB, setUseDB] = useState(true);
   const [dbLoading, setDbLoading] = useState(false);
+  const [showUserDialog, setShowUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<'Collin' | 'Leif' | 'Ryland' | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [notesLoading, setNotesLoading] = useState(false);
 
   // Hash function using Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -39,6 +45,7 @@ export const Setlist: React.FC = () => {
   useEffect(() => {
     const checkAuthentication = async () => {
       const storedHash = localStorage.getItem(SETLIST_PASSWORD_HASH_KEY);
+      const storedUser = localStorage.getItem(SETLIST_USER_KEY) as 'Collin' | 'Leif' | 'Ryland' | null;
       const correctPassword = process.env.REACT_APP_SET_LIST_PASSWORD;
       
       if (!correctPassword) {
@@ -55,7 +62,16 @@ export const Setlist: React.FC = () => {
             // Hashes match, user is authenticated
             setIsAuthenticated(true);
             setShowPasswordDialog(false);
-            loadSetlist();
+            
+            // Check if user is already selected
+            if (storedUser && ['Collin', 'Leif', 'Ryland'].includes(storedUser)) {
+              setSelectedUser(storedUser);
+              loadSetlist();
+              loadNotes();
+            } else {
+              // Show user selection dialog
+              setShowUserDialog(true);
+            }
             return;
           }
         } catch (err) {
@@ -77,6 +93,28 @@ export const Setlist: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useDB]);
+
+  // Load notes when authenticated and user is selected
+  useEffect(() => {
+    if (isAuthenticated && selectedUser) {
+      loadNotes();
+      // Set up real-time subscription for notes
+      const notesSubscription = supabase
+        .channel('notes_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'notes' },
+          () => {
+            loadNotes();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        notesSubscription.unsubscribe();
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, selectedUser]);
 
   // Default setlist content (only used if localStorage is empty)
   const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
@@ -220,7 +258,17 @@ export const Setlist: React.FC = () => {
         localStorage.setItem(SETLIST_PASSWORD_HASH_KEY, passwordHash);
         setIsAuthenticated(true);
         setShowPasswordDialog(false);
-        loadSetlist();
+        
+        // Check if user is already selected
+        const storedUser = localStorage.getItem(SETLIST_USER_KEY) as 'Collin' | 'Leif' | 'Ryland' | null;
+        if (storedUser && ['Collin', 'Leif', 'Ryland'].includes(storedUser)) {
+          setSelectedUser(storedUser);
+          loadSetlist();
+          loadNotes();
+        } else {
+          // Show user selection dialog
+          setShowUserDialog(true);
+        }
       } catch (err) {
         console.error('Error hashing password:', err);
         setError('Error processing password. Please try again.');
@@ -228,6 +276,53 @@ export const Setlist: React.FC = () => {
     } else {
       setError('Incorrect password. Please try again.');
       setPassword('');
+    }
+  };
+
+  const handleUserSelect = (user: 'Collin' | 'Leif' | 'Ryland') => {
+    setSelectedUser(user);
+    localStorage.setItem(SETLIST_USER_KEY, user);
+    setShowUserDialog(false);
+    loadSetlist();
+    loadNotes();
+  };
+
+  const loadNotes = async () => {
+    setNotesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setNotes(data || []);
+    } catch (err) {
+      console.error('Error loading notes:', err);
+      setError('Failed to load notes.');
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          user_name: selectedUser,
+          message: newMessage.trim()
+        });
+
+      if (error) throw error;
+      setNewMessage('');
+      // Notes will auto-update via real-time subscription
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError('Failed to send message.');
     }
   };
 
@@ -661,6 +756,68 @@ export const Setlist: React.FC = () => {
     );
   }
 
+  // User selection dialog
+  if (isAuthenticated && !selectedUser) {
+    return (
+      <Transition appear show={showUserDialog} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => {}}>
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-black opacity-50" aria-hidden="true" />
+            </Transition.Child>
+
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className={`inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl ${
+                darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+              }`}>
+                <Dialog.Title as="h3" className={`text-lg font-medium leading-6 mb-4 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Who are you?
+                </Dialog.Title>
+                <div className="space-y-2">
+                  {(['Collin', 'Leif', 'Ryland'] as const).map((user) => (
+                    <button
+                      key={user}
+                      onClick={() => handleUserSelect(user)}
+                      className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      }`}
+                    >
+                      {user}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
+    );
+  }
+
   return (
     <div className={`min-h-screen p-8 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
       <div className="max-w-4xl mx-auto">
@@ -961,6 +1118,101 @@ export const Setlist: React.FC = () => {
             >
               {markdown}
             </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Notes/Chat Section */}
+        {selectedUser && (
+          <div className={`mt-8 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
+            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Notes
+              </h2>
+              <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Chatting as: <span className="font-semibold">{selectedUser}</span>
+              </p>
+            </div>
+            
+            {/* Messages Container */}
+            <div className={`h-64 overflow-y-auto p-4 space-y-3 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+              {notesLoading ? (
+                <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Loading messages...
+                </div>
+              ) : notes.length === 0 ? (
+                <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  No messages yet. Start the conversation!
+                </div>
+              ) : (
+                notes.map((note) => (
+                  <div
+                    key={note.id}
+                    className={`flex flex-col ${
+                      note.user_name === selectedUser ? 'items-end' : 'items-start'
+                    }`}
+                  >
+                    <div className={`flex items-center gap-2 mb-1 ${
+                      note.user_name === selectedUser ? 'flex-row-reverse' : 'flex-row'
+                    }`}>
+                      <span className={`text-xs font-semibold ${
+                        darkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        {note.user_name}
+                      </span>
+                      <span className={`text-xs ${
+                        darkMode ? 'text-gray-500' : 'text-gray-500'
+                      }`}>
+                        {note.created_at ? new Date(note.created_at).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : ''}
+                      </span>
+                    </div>
+                    <div
+                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
+                        note.user_name === selectedUser
+                          ? darkMode
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-500 text-white'
+                          : darkMode
+                            ? 'bg-gray-700 text-white'
+                            : 'bg-white text-gray-900 border border-gray-200'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap break-words">{note.message}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <form onSubmit={handleSendMessage} className={`p-4 border-t ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className={`flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    darkMode
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>

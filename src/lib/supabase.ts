@@ -24,3 +24,10 @@ export type SetlistSection = {
   updated_at?: string;
 };
 
+export type Note = {
+  id?: number;
+  user_name: 'Collin' | 'Leif' | 'Ryland';
+  message: string;
+  created_at?: string;
+};
+

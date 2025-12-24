@@ -104,6 +104,7 @@ const MainContent = () => {
             <Link to="/" className="mr-4">Home</Link>
             <Link to="/portfolio" className="mr-4">Portfolio</Link>
             <Link to="/contact" className="mr-4">Contact</Link>
+            <Link to="/setlist" className="mr-4">Setlist</Link>
             <button onClick={toggleTheme} className="focus:outline-none flex-end">
               {darkMode ? (
                 <SunIcon className="w-6 h-6 text-yellow-400" aria-label="Switch to Light Mode" />

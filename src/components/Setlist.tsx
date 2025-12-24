@@ -21,9 +21,9 @@ export const Setlist: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [viewMode, setViewMode] = useState<'preview' | 'crud'>('preview');
-  const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string} | null>(null);
+  const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string, originalSong: string, originalArtist: string} | null>(null);
   const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
-  const [useDB, setUseDB] = useState(true);
+  const useDB = true; // Always use database
   const [dbLoading, setDbLoading] = useState(false);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<'Collin' | 'Leif' | 'Ryland' | null>(null);
@@ -86,13 +86,13 @@ export const Setlist: React.FC = () => {
     checkAuthentication();
   }, []);
 
-  // Reload setlist when useDB toggle changes
+  // Load setlist when authenticated and user is selected
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && selectedUser) {
       loadSetlist();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useDB]);
+  }, [isAuthenticated, selectedUser]);
 
   // Load notes when authenticated and user is selected
   useEffect(() => {
@@ -515,36 +515,102 @@ export const Setlist: React.FC = () => {
   };
 
   const handleEditSong = (sectionTitle: string, index: number, song: string, artist: string) => {
-    setEditingItem({ section: sectionTitle, index, song, artist });
+    setEditingItem({ section: sectionTitle, index, song, artist, originalSong: song, originalArtist: artist });
   };
 
   const handleSaveEditToDB = async () => {
     if (!editingItem) return;
     
+    setDbLoading(true);
     try {
-      // Get the song ID from the database
-      const { data: songs } = await supabase
+      // Check if database is empty - if so, save current setlist first
+      const { data: existingSongs, error: checkError } = await supabase
         .from('songs')
         .select('id')
-        .eq('section', editingItem.section)
-        .order('order_index', { ascending: true });
+        .limit(1);
 
-      if (songs && songs[editingItem.index]) {
-        const { error } = await supabase
-          .from('songs')
-          .update({
-            song: editingItem.song,
-            artist: editingItem.artist
-          })
-          .eq('id', songs[editingItem.index].id);
+      if (checkError) throw checkError;
 
-        if (error) throw error;
-        await loadSetlistFromDB();
-        setEditingItem(null);
+      if (!existingSongs || existingSongs.length === 0) {
+        // Database is empty, save the current markdown to database first
+        const sections = parseMarkdown(markdown);
+        const songsToInsert: Omit<SupabaseSong, 'id' | 'created_at' | 'updated_at'>[] = [];
+        
+        sections.forEach((section) => {
+          section.songs.forEach((song, index) => {
+            songsToInsert.push({
+              section: section.title,
+              song: song.song,
+              artist: song.artist,
+              order_index: index
+            });
+          });
+        });
+
+        if (songsToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('songs')
+            .insert(songsToInsert);
+
+          if (insertError) throw insertError;
+        }
       }
+
+      // Now find and update the song
+      const searchSong = editingItem.originalSong.trim();
+      const searchArtist = editingItem.originalArtist.trim();
+
+      // First try exact match
+      let { data: songsByContent, error: fetchError } = await supabase
+        .from('songs')
+        .select('id, song, artist')
+        .eq('song', searchSong)
+        .eq('artist', searchArtist)
+        .limit(5);
+
+      if (fetchError) throw fetchError;
+
+      // If no exact match, try case-insensitive
+      if (!songsByContent || songsByContent.length === 0) {
+        const { data: allSongs } = await supabase
+          .from('songs')
+          .select('id, song, artist')
+          .limit(100);
+
+        if (allSongs) {
+          songsByContent = allSongs.filter(s => 
+            s.song.trim().toLowerCase() === searchSong.toLowerCase() &&
+            s.artist.trim().toLowerCase() === searchArtist.toLowerCase()
+          );
+        }
+      }
+
+      if (!songsByContent || songsByContent.length === 0) {
+        throw new Error(`Could not find song: "${searchSong}" by ${searchArtist}`);
+      }
+
+      const songId = songsByContent[0].id;
+      if (!songId) {
+        throw new Error('Song ID not found');
+      }
+
+      const { error: updateError } = await supabase
+        .from('songs')
+        .update({
+          song: editingItem.song.trim(),
+          artist: editingItem.artist.trim()
+        })
+        .eq('id', songId);
+
+      if (updateError) throw updateError;
+      
+      await loadSetlistFromDB();
+      setEditingItem(null);
     } catch (err) {
       console.error('Error updating song in DB:', err);
-      setError('Failed to update song in database.');
+      setError(err instanceof Error ? err.message : 'Failed to update song in database.');
+    } finally {
+      setDbLoading(false);
     }
   };
 
@@ -822,6 +888,17 @@ export const Setlist: React.FC = () => {
   return (
     <div className={`min-h-screen p-8 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
       <div className="max-w-4xl mx-auto">
+        {error && (
+          <div className={`mb-4 p-3 rounded-lg ${darkMode ? 'bg-red-900/50 border border-red-700' : 'bg-red-100 border border-red-300'}`}>
+            <p className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-700'}`}>{error}</p>
+            <button
+              onClick={() => setError('')}
+              className={`mt-2 text-xs ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-800'}`}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Setlist</h1>
           {!isEditing ? (
@@ -863,17 +940,6 @@ export const Setlist: React.FC = () => {
                     Preview
                   </>
                 )}
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  darkMode
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                }`}
-              >
-                <Edit2 size={18} />
-                Raw Edit
               </button>
             </div>
           ) : (

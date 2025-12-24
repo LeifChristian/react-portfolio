@@ -86,34 +86,6 @@ export const Setlist: React.FC = () => {
     checkAuthentication();
   }, []);
 
-  // Load setlist when authenticated and user is selected
-  useEffect(() => {
-    if (isAuthenticated && selectedUser) {
-      loadSetlist();
-    }
-  }, [isAuthenticated, selectedUser, loadSetlist]);
-
-  // Load notes when authenticated and user is selected
-  useEffect(() => {
-    if (isAuthenticated && selectedUser) {
-      loadNotes();
-      // Set up real-time subscription for notes
-      const notesSubscription = supabase
-        .channel('notes_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'notes' },
-          () => {
-            loadNotes();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        notesSubscription.unsubscribe();
-      };
-    }
-  }, [isAuthenticated, selectedUser, loadNotes]);
-
   // Default setlist content (only used if localStorage is empty)
   const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
 
@@ -302,6 +274,34 @@ export const Setlist: React.FC = () => {
       setNotesLoading(false);
     }
   }, []);
+
+  // Load setlist when authenticated and user is selected
+  useEffect(() => {
+    if (isAuthenticated && selectedUser) {
+      loadSetlist();
+    }
+  }, [isAuthenticated, selectedUser, loadSetlist]);
+
+  // Load notes when authenticated and user is selected
+  useEffect(() => {
+    if (isAuthenticated && selectedUser) {
+      loadNotes();
+      // Set up real-time subscription for notes
+      const notesSubscription = supabase
+        .channel('notes_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'notes' },
+          () => {
+            loadNotes();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        notesSubscription.unsubscribe();
+      };
+    }
+  }, [isAuthenticated, selectedUser, loadNotes]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -319,7 +319,8 @@ export const Setlist: React.FC = () => {
 
       if (error) throw error;
       setNewMessage('');
-      // Notes will auto-update via real-time subscription
+      // Reload notes immediately to show the new message
+      await loadNotes();
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message.');

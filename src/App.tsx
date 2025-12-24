@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Home } from './components/Home';
 import ContactForm from './components/ContactForm'
 import Portfolio from './components/Portfolio';
+import { Setlist } from './components/Setlist';
 import CustomThemeProvider, { useThemeContext } from './ThemeProvider';
 // @ts-ignore
 import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';
@@ -121,6 +122,7 @@ const MainContent = () => {
             <Route path="/" element={<Home />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/contact" element={<ContactForm />} />
+            <Route path="/setlist" element={<Setlist />} />
           </Routes>
         </div>
       </main>

@@ -176,7 +176,19 @@ export const Setlist: React.FC = () => {
 `;
 
   // Supabase functions
-  const loadSetlistFromDB = async () => {
+  const loadSetlistFromLocal = useCallback(() => {
+    const savedContent = localStorage.getItem(SETLIST_STORAGE_KEY);
+    if (savedContent) {
+      setMarkdown(savedContent);
+      setEditContent(savedContent);
+      return;
+    }
+    setMarkdown(DEFAULT_SETLIST);
+    setEditContent(DEFAULT_SETLIST);
+    localStorage.setItem(SETLIST_STORAGE_KEY, DEFAULT_SETLIST);
+  }, []);
+
+  const loadSetlistFromDB = useCallback(async () => {
     setDbLoading(true);
     try {
       // Fetch all songs ordered by section and order_index
@@ -217,19 +229,7 @@ export const Setlist: React.FC = () => {
     } finally {
       setDbLoading(false);
     }
-  };
-
-  const loadSetlistFromLocal = () => {
-    const savedContent = localStorage.getItem(SETLIST_STORAGE_KEY);
-    if (savedContent) {
-      setMarkdown(savedContent);
-      setEditContent(savedContent);
-      return;
-    }
-    setMarkdown(DEFAULT_SETLIST);
-    setEditContent(DEFAULT_SETLIST);
-    localStorage.setItem(SETLIST_STORAGE_KEY, DEFAULT_SETLIST);
-  };
+  }, [loadSetlistFromLocal]);
 
   // Load setlist from localStorage or DB based on toggle
   const loadSetlist = useCallback(async () => {
@@ -238,7 +238,7 @@ export const Setlist: React.FC = () => {
     } else {
       loadSetlistFromLocal();
     }
-  }, [useDB]);
+  }, [useDB, loadSetlistFromDB, loadSetlistFromLocal]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

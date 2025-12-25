@@ -4,7 +4,7 @@ import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useThemeContext } from '../ThemeProvider';
-import { Edit2, Save, X, Download, Trash2, Plus, Send } from 'lucide-react';
+import { Edit2, Save, X, Download, Trash2, Plus, Send, Search } from 'lucide-react';
 import { supabase, Song as SupabaseSong, Note } from '../lib/supabase';
 
 const SETLIST_STORAGE_KEY = 'setlist_content';
@@ -83,6 +83,7 @@ export const Setlist: React.FC = () => {
   const [editContent, setEditContent] = useState('');
   const [viewMode, setViewMode] = useState<'preview' | 'crud'>('preview');
   const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string, originalSong: string, originalArtist: string} | null>(null);
+  const [deletingItem, setDeletingItem] = useState<{section: string, index: number, song: string, artist: string} | null>(null);
   const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
   const useDB = true; // Always use database
   const [dbLoading, setDbLoading] = useState(false);
@@ -91,6 +92,10 @@ export const Setlist: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [notesLoading, setNotesLoading] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'alphabetical' | 'genre'>('alphabetical');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -517,6 +522,95 @@ export const Setlist: React.FC = () => {
     return md.trim();
   };
 
+  // Filter sections based on search query
+  const getFilteredSections = useCallback((sections: Section[], query: string): Section[] => {
+    if (!query.trim()) {
+      return sections;
+    }
+
+    const queryLower = query.toLowerCase().trim();
+    const filtered: Section[] = [];
+
+    sections.forEach((section) => {
+      const matchesSection = section.title.toLowerCase().includes(queryLower);
+      const filteredSongs = section.songs.filter((song) => {
+        const matchesSong = song.song.toLowerCase().includes(queryLower);
+        const matchesArtist = song.artist.toLowerCase().includes(queryLower);
+        return matchesSong || matchesArtist;
+      });
+
+      // Include section if it matches or has matching songs
+      if (matchesSection || filteredSongs.length > 0) {
+        filtered.push({
+          title: section.title,
+          songs: matchesSection ? section.songs : filteredSongs
+        });
+      }
+    });
+
+    return filtered;
+  }, []);
+
+  // Sort sections based on sort options
+  const getSortedSections = useCallback((sections: Section[]): Section[] => {
+    const sorted = [...sections];
+
+    if (sortBy === 'genre') {
+      sorted.sort((a, b) => {
+        const comparison = a.title.localeCompare(b.title);
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    } else if (sortBy === 'alphabetical') {
+      // Flatten all songs with their sections, sort, then regroup
+      const allSongs: { section: string; song: string; artist: string }[] = [];
+      sorted.forEach((section) => {
+        section.songs.forEach((song) => {
+          allSongs.push({
+            section: section.title,
+            song: song.song,
+            artist: song.artist
+          });
+        });
+      });
+
+      allSongs.sort((a, b) => {
+        const comparison = a.song.localeCompare(b.song);
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+
+      // Regroup by section
+      const sectionMap = new Map<string, Section>();
+      allSongs.forEach((item) => {
+        if (!sectionMap.has(item.section)) {
+          sectionMap.set(item.section, { title: item.section, songs: [] });
+        }
+        sectionMap.get(item.section)!.songs.push({
+          song: item.song,
+          artist: item.artist
+        });
+      });
+
+      return Array.from(sectionMap.values());
+    }
+
+    return sorted;
+  }, [sortBy, sortDirection]);
+
+  // Get filtered and sorted markdown for display
+  const getFilteredMarkdown = useCallback((): string => {
+    const sections = parseMarkdown(markdown);
+    const filteredSections = getFilteredSections(sections, searchQuery);
+    const sortedSections = getSortedSections(filteredSections);
+    return sectionsToMarkdown(sortedSections);
+  }, [markdown, searchQuery, getFilteredSections, getSortedSections]);
+
+  // Get filtered and sorted sections for CRUD view
+  const getDisplaySections = useCallback((): Section[] => {
+    const sections = parseMarkdown(markdown);
+    const filteredSections = getFilteredSections(sections, searchQuery);
+    return getSortedSections(filteredSections);
+  }, [markdown, searchQuery, getFilteredSections, getSortedSections]);
+
   // CRUD operations
   const [newSectionName, setNewSectionName] = useState('');
   
@@ -752,6 +846,17 @@ export const Setlist: React.FC = () => {
         localStorage.setItem(SETLIST_STORAGE_KEY, newMarkdown);
       }
     }
+    setDeletingItem(null);
+  };
+
+  const handleDeleteClick = (sectionTitle: string, index: number, song: string, artist: string) => {
+    setDeletingItem({ section: sectionTitle, index, song, artist });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deletingItem) {
+      await handleDeleteSong(deletingItem.section, deletingItem.index);
+    }
   };
 
   // Helper function to extract text content from React children
@@ -973,6 +1078,21 @@ export const Setlist: React.FC = () => {
                 <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
               )}
               <button
+                onClick={() => setShowSearch(!showSearch)}
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode
+                    ? showSearch
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-600 hover:bg-gray-700 text-white'
+                    : showSearch
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-gray-400 hover:bg-gray-500 text-white'
+                }`}
+                title="Search songs"
+              >
+                <Search size={20} />
+              </button>
+              <button
                 onClick={handleDownload}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                   darkMode
@@ -1036,6 +1156,124 @@ export const Setlist: React.FC = () => {
           )}
         </div>
 
+        {/* Search Panel */}
+        {showSearch && (
+          <div className={`mb-6 rounded-lg p-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Search & Sort
+              </h2>
+              <button
+                onClick={() => {
+                  setShowSearch(false);
+                  setSearchQuery('');
+                }}
+                className={`p-2 rounded transition-colors ${
+                  darkMode
+                    ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by genre, artist, or song title..."
+                  className={`w-full px-4 py-2 pr-10 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-colors ${
+                      darkMode
+                        ? 'hover:bg-gray-600 text-gray-400 hover:text-white'
+                        : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                    }`}
+                    title="Clear search"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'alphabetical' | 'genre')}
+                  className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                >
+                  <option value="alphabetical">Alphabetical (Song Name)</option>
+                  <option value="genre">Genre</option>
+                </select>
+              </div>
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Direction
+                </label>
+                <select
+                  value={sortDirection}
+                  onChange={(e) => setSortDirection(e.target.value as 'asc' | 'desc')}
+                  className={`w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    darkMode
+                      ? 'bg-gray-700 border-gray-600 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                >
+                  <option value="asc">Ascending (A-Z)</option>
+                  <option value="desc">Descending (Z-A)</option>
+                </select>
+              </div>
+            </div>
+            {searchQuery && (() => {
+              const sections = parseMarkdown(markdown);
+              const filteredSections = getFilteredSections(sections, searchQuery);
+              const totalSongs = sections.reduce((sum, s) => sum + s.songs.length, 0);
+              const filteredSongs = filteredSections.reduce((sum, s) => sum + s.songs.length, 0);
+              
+              return (
+                <div className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {filteredSongs === 0 ? (
+                    <span className={darkMode ? 'text-red-400' : 'text-red-600'}>No results found</span>
+                  ) : (
+                    <span>
+                      Showing {filteredSongs} of {totalSongs} songs
+                      {filteredSongs < totalSongs && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('');
+                            setShowSearch(false);
+                          }}
+                          className={`ml-2 underline ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                        >
+                          Clear filter
+                        </button>
+                      )}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {isEditing ? (
           <div className={`rounded-lg p-6 ${
             darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'
@@ -1067,7 +1305,7 @@ export const Setlist: React.FC = () => {
                   }`}
                 >
                   <option value="">Select Section</option>
-                  {parseMarkdown(markdown).map((section, idx) => (
+                  {getDisplaySections().map((section, idx) => (
                     <option key={idx} value={section.title}>
                       {section.title}
                     </option>
@@ -1128,7 +1366,7 @@ export const Setlist: React.FC = () => {
             </div>
 
             {/* Songs List */}
-            {parseMarkdown(markdown).map((section, sectionIdx) => (
+            {getDisplaySections().map((section, sectionIdx) => (
               <div key={sectionIdx} className="mb-6">
                 <h3 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {section.title}
@@ -1201,7 +1439,7 @@ export const Setlist: React.FC = () => {
                             <Edit2 size={16} />
                           </button>
                           <button
-                            onClick={() => handleDeleteSong(section.title, songIdx)}
+                            onClick={() => handleDeleteClick(section.title, songIdx, songItem.song, songItem.artist)}
                             className={`p-2 rounded transition-colors ${
                               darkMode
                                 ? 'bg-red-600 hover:bg-red-700 text-white'
@@ -1228,7 +1466,7 @@ export const Setlist: React.FC = () => {
               remarkPlugins={[remarkGfm]}
               components={markdownComponents}
             >
-              {markdown}
+              {getFilteredMarkdown()}
             </ReactMarkdown>
           </div>
         )}
@@ -1328,6 +1566,84 @@ export const Setlist: React.FC = () => {
             </form>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Transition appear show={deletingItem !== null} as={Fragment}>
+          <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setDeletingItem(null)}>
+            <div className="min-h-screen px-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-black opacity-50" aria-hidden="true" />
+              </Transition.Child>
+
+              <span className="inline-block h-screen align-middle" aria-hidden="true">
+                &#8203;
+              </span>
+
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <div className={`inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl ${
+                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                }`}>
+                  <Dialog.Title as="h3" className={`text-lg font-medium leading-6 mb-4 ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    Confirm Delete
+                  </Dialog.Title>
+                  {deletingItem && (
+                    <div className="mb-4">
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Are you sure you want to delete this song?
+                      </p>
+                      <p className={`text-base font-semibold mt-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {deletingItem.song} — {deletingItem.artist}
+                      </p>
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Section: {deletingItem.section}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setDeletingItem(null)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                          : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmDelete}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-red-500 hover:bg-red-600 text-white'
+                      }`}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition>
       </div>
     </div>
   );

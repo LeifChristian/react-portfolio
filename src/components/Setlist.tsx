@@ -1220,7 +1220,7 @@ export const Setlist: React.FC = () => {
                       </span>
                     </div>
                     <div
-                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
+                      className={`max-w-[75%] rounded-lg px-4 py-2 overflow-hidden ${
                         note.user_name === selectedUser
                           ? darkMode
                             ? 'bg-blue-600 text-white'
@@ -1230,7 +1230,7 @@ export const Setlist: React.FC = () => {
                             : 'bg-white text-gray-900 border border-gray-200'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{note.message}</p>
+                      <p className="text-sm whitespace-pre-wrap chat-message">{note.message}</p>
                     </div>
                   </div>
                 ))

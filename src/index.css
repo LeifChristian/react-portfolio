@@ -192,3 +192,11 @@ code {
 .dark .notes-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
 }
+
+/* Better text wrapping for chat messages */
+.chat-message {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}

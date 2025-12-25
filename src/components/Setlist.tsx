@@ -645,6 +645,38 @@ export const Setlist: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadCustomSetlist = () => {
+    if (builderSongs.length === 0) return;
+    
+    // Convert builder songs to markdown format
+    const sectionsMap = new Map<string, { song: string; artist: string }[]>();
+    builderSongs.forEach((song) => {
+      if (!sectionsMap.has(song.section)) {
+        sectionsMap.set(song.section, []);
+      }
+      sectionsMap.get(song.section)!.push({ song: song.song, artist: song.artist });
+    });
+
+    let md = `# ${setlistName || 'Custom Setlist'}\n\n`;
+    sectionsMap.forEach((songs, sectionTitle) => {
+      md += `## ${sectionTitle}\n`;
+      songs.forEach(s => {
+        md += `- ${s.song} — ${s.artist}  \n`;
+      });
+      md += '\n';
+    });
+
+    const blob = new Blob([md.trim()], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${(setlistName || 'custom-setlist').replace(/[^a-z0-9]/gi, '-').toLowerCase()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Parse markdown into structured data
   type Song = { song: string; artist: string };
   type Section = { title: string; songs: Song[] };
@@ -1244,77 +1276,117 @@ export const Setlist: React.FC = () => {
           </div>
         )}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Setlist</h1>
+          <h1 className="text-3xl font-bold">
+            {showBuilder && currentSetlistId ? setlistName || 'Custom Setlist' : 'Setlist'}
+          </h1>
           {!isEditing ? (
             <div className="flex gap-2 items-center">
-              <button
-                onClick={() => setShowBuilder(!showBuilder)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  darkMode
-                    ? showBuilder
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-gray-600 hover:bg-gray-700 text-white'
-                    : showBuilder
-                      ? 'bg-green-500 hover:bg-green-600 text-white'
-                      : 'bg-gray-400 hover:bg-gray-500 text-white'
-                }`}
-              >
-                <ListMusic size={18} />
-                {showBuilder ? 'Master List' : 'Builder'}
-              </button>
-              {dbLoading && (
-                <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
-              )}
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode
-                    ? showSearch
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-600 hover:bg-gray-700 text-white'
-                    : showSearch
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-gray-400 hover:bg-gray-500 text-white'
-                }`}
-                title="Search songs"
-              >
-                <Search size={20} />
-              </button>
-              <button
-                onClick={handleDownload}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  darkMode
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white'
-                    : 'bg-gray-400 hover:bg-gray-500 text-white'
-                }`}
-              >
-                <Download size={18} />
-                Download
-              </button>
-              <button
-                onClick={() => setViewMode(viewMode === 'preview' ? 'crud' : 'preview')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  darkMode
-                    ? viewMode === 'crud'
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-purple-500 hover:bg-purple-600 text-white'
-                    : viewMode === 'crud'
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-purple-500 hover:bg-purple-600 text-white'
-                }`}
-              >
-                {viewMode === 'preview' ? (
-                  <>
-                    <Edit2 size={18} />
-                    Manage
-                  </>
-                ) : (
-                  <>
+              {showBuilder && currentSetlistId ? (
+                // Custom Setlist View - Show custom setlist buttons
+                <>
+                  <button
+                    onClick={() => {
+                      setShowBuilder(false);
+                      setCurrentSetlistId(null);
+                      setSetlistName('');
+                      setBuilderSongs([]);
+                      setBuilderEditMode(true);
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : 'bg-gray-400 hover:bg-gray-500 text-white'
+                    }`}
+                  >
                     <X size={18} />
-                    Preview
-                  </>
-                )}
-              </button>
+                    Back to Master
+                  </button>
+                  <button
+                    onClick={handleDownloadCustomSetlist}
+                    disabled={builderSongs.length === 0}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      darkMode
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : 'bg-gray-400 hover:bg-gray-500 text-white'
+                    }`}
+                  >
+                    <Download size={18} />
+                    Download
+                  </button>
+                </>
+              ) : (
+                // Master Setlist View - Show regular buttons
+                <>
+                  {dbLoading && (
+                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                  )}
+                  <button
+                    onClick={() => setShowBuilder(!showBuilder)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? showBuilder
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : showBuilder
+                          ? 'bg-green-500 hover:bg-green-600 text-white'
+                          : 'bg-gray-400 hover:bg-gray-500 text-white'
+                    }`}
+                  >
+                    <ListMusic size={18} />
+                    {showBuilder ? 'Master List' : 'Builder'}
+                  </button>
+                  <button
+                    onClick={() => setShowSearch(!showSearch)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      darkMode
+                        ? showSearch
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : showSearch
+                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                          : 'bg-gray-400 hover:bg-gray-500 text-white'
+                    }`}
+                    title="Search songs"
+                  >
+                    <Search size={20} />
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : 'bg-gray-400 hover:bg-gray-500 text-white'
+                    }`}
+                  >
+                    <Download size={18} />
+                    Download
+                  </button>
+                  <button
+                    onClick={() => setViewMode(viewMode === 'preview' ? 'crud' : 'preview')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      darkMode
+                        ? viewMode === 'crud'
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-purple-500 hover:bg-purple-600 text-white'
+                        : viewMode === 'crud'
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-purple-500 hover:bg-purple-600 text-white'
+                    }`}
+                  >
+                    {viewMode === 'preview' ? (
+                      <>
+                        <Edit2 size={18} />
+                        Manage
+                      </>
+                    ) : (
+                      <>
+                        <X size={18} />
+                        Preview
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex gap-2">

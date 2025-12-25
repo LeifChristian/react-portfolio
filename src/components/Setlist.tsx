@@ -11,83 +11,8 @@ const SETLIST_STORAGE_KEY = 'setlist_content';
 const SETLIST_PASSWORD_HASH_KEY = 'setlist_password_hash';
 const SETLIST_USER_KEY = 'setlist_user';
 
-export const Setlist: React.FC = () => {
-  const { darkMode } = useThemeContext();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(true);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [markdown, setMarkdown] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState('');
-  const [viewMode, setViewMode] = useState<'preview' | 'crud'>('preview');
-  const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string, originalSong: string, originalArtist: string} | null>(null);
-  const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
-  const useDB = true; // Always use database
-  const [dbLoading, setDbLoading] = useState(false);
-  const [showUserDialog, setShowUserDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<'Collin' | 'Leif' | 'Ryland' | null>(null);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [notesLoading, setNotesLoading] = useState(false);
-
-  // Hash function using Web Crypto API
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  };
-
-  // Check if already authenticated (check localStorage hash)
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      const storedHash = localStorage.getItem(SETLIST_PASSWORD_HASH_KEY);
-      const storedUser = localStorage.getItem(SETLIST_USER_KEY) as 'Collin' | 'Leif' | 'Ryland' | null;
-      const correctPassword = process.env.REACT_APP_SET_LIST_PASSWORD;
-      
-      if (!correctPassword) {
-        // No password configured, show error
-        setError('Password not configured. Please set REACT_APP_SET_LIST_PASSWORD in your .env file.');
-        return;
-      }
-
-      if (storedHash) {
-        // Hash exists, compare with current password
-        try {
-          const currentPasswordHash = await hashPassword(correctPassword);
-          if (storedHash === currentPasswordHash) {
-            // Hashes match, user is authenticated
-            setIsAuthenticated(true);
-            setShowPasswordDialog(false);
-            
-            // Check if user is already selected
-            if (storedUser && ['Collin', 'Leif', 'Ryland'].includes(storedUser)) {
-              setSelectedUser(storedUser);
-              loadSetlist();
-              loadNotes();
-            } else {
-              // Show user selection dialog
-              setShowUserDialog(true);
-            }
-            return;
-          }
-        } catch (err) {
-          console.error('Error comparing password hash:', err);
-        }
-      }
-      
-      // No hash stored or hash doesn't match, show password dialog
-      setShowPasswordDialog(true);
-    };
-
-    checkAuthentication();
-  }, []);
-
-  // Default setlist content (only used if localStorage is empty)
-  const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
+// Default setlist content (only used if localStorage is empty)
+const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
 
 ## 🕺 Dance / Funk / Pop
 - Uptown Funk — Bruno Mars  
@@ -147,6 +72,81 @@ export const Setlist: React.FC = () => {
 - 6 Feet — Original  
 `;
 
+export const Setlist: React.FC = () => {
+  const { darkMode } = useThemeContext();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(true);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [markdown, setMarkdown] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [viewMode, setViewMode] = useState<'preview' | 'crud'>('preview');
+  const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string, originalSong: string, originalArtist: string} | null>(null);
+  const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
+  const useDB = true; // Always use database
+  const [dbLoading, setDbLoading] = useState(false);
+  const [showUserDialog, setShowUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<'Collin' | 'Leif' | 'Ryland' | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  // Hash function using Web Crypto API
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
+
+  // Check if already authenticated (check localStorage hash)
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const storedHash = localStorage.getItem(SETLIST_PASSWORD_HASH_KEY);
+      const storedUser = localStorage.getItem(SETLIST_USER_KEY) as 'Collin' | 'Leif' | 'Ryland' | null;
+      const correctPassword = process.env.REACT_APP_SET_LIST_PASSWORD;
+      
+      if (!correctPassword) {
+        // No password configured, show error
+        setError('Password not configured. Please set REACT_APP_SET_LIST_PASSWORD in your .env file.');
+        return;
+      }
+
+      if (storedHash) {
+        // Hash exists, compare with current password
+        try {
+          const currentPasswordHash = await hashPassword(correctPassword);
+          if (storedHash === currentPasswordHash) {
+            // Hashes match, user is authenticated
+            setIsAuthenticated(true);
+            setShowPasswordDialog(false);
+            
+            // Check if user is already selected
+            // Functions will be called by useEffect hooks after they're defined
+            if (storedUser && ['Collin', 'Leif', 'Ryland'].includes(storedUser)) {
+              setSelectedUser(storedUser);
+            } else {
+              // Show user selection dialog
+              setShowUserDialog(true);
+            }
+            return;
+          }
+        } catch (err) {
+          console.error('Error comparing password hash:', err);
+        }
+      }
+      
+      // No hash stored or hash doesn't match, show password dialog
+      setShowPasswordDialog(true);
+    };
+
+    checkAuthentication();
+  }, []);
+
+
   // Supabase functions
   const loadSetlistFromLocal = useCallback(() => {
     const savedContent = localStorage.getItem(SETLIST_STORAGE_KEY);
@@ -158,7 +158,8 @@ export const Setlist: React.FC = () => {
     setMarkdown(DEFAULT_SETLIST);
     setEditContent(DEFAULT_SETLIST);
     localStorage.setItem(SETLIST_STORAGE_KEY, DEFAULT_SETLIST);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // DEFAULT_SETLIST is a constant outside component, doesn't need to be in deps
 
   const loadSetlistFromDB = useCallback(async () => {
     setDbLoading(true);

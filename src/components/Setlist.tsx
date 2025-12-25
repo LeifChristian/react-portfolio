@@ -107,6 +107,8 @@ export const Setlist: React.FC = () => {
   const [builderEditMode, setBuilderEditMode] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [draggedMasterSong, setDraggedMasterSong] = useState<{section: string, index: number} | null>(null);
+  const [showActualOrderView, setShowActualOrderView] = useState(false);
+  const [masterSongs, setMasterSongs] = useState<SupabaseSong[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -185,33 +187,53 @@ export const Setlist: React.FC = () => {
   const loadSetlistFromDB = useCallback(async () => {
     setDbLoading(true);
     try {
-      // Fetch all songs ordered by section and order_index
-      const { data: songs, error } = await supabase
-        .from('songs')
-        .select('*')
-        .order('section', { ascending: true })
-        .order('order_index', { ascending: true });
+      // Fetch all songs ordered by global master_order (falls back if column isn't present yet)
+      let songs: SupabaseSong[] | null = null;
+      {
+        const { data, error } = await supabase
+          .from('songs')
+          .select('*')
+          .order('master_order', { ascending: true })
+          .order('id', { ascending: true });
 
-      if (error) throw error;
+        if (!error) {
+          songs = data as SupabaseSong[] | null;
+        } else {
+          // Fallback for older schemas (no master_order yet)
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('songs')
+            .select('*')
+            .order('section', { ascending: true })
+            .order('order_index', { ascending: true })
+            .order('id', { ascending: true });
 
-      // Group songs by section, preserving order_index
-      const sectionsMap = new Map<string, { song: string; artist: string; order_index: number }[]>();
-      songs?.forEach((song: SupabaseSong) => {
+          if (fallbackError) throw fallbackError;
+          songs = fallbackData as SupabaseSong[] | null;
+        }
+      }
+
+      setMasterSongs(songs || []);
+
+      // Group songs by section, preserving *section order as encountered* in master order
+      const sectionsMap = new Map<string, { song: string; artist: string }[]>();
+      const sectionOrder: string[] = [];
+      (songs || []).forEach((song: SupabaseSong) => {
         if (!sectionsMap.has(song.section)) {
           sectionsMap.set(song.section, []);
+          sectionOrder.push(song.section);
         }
-        sectionsMap.get(song.section)!.push({ 
-          song: song.song, 
+        sectionsMap.get(song.section)!.push({
+          song: song.song,
           artist: song.artist,
-          order_index: song.order_index 
         });
       });
 
       // Convert to markdown format (keep bullet format so parseMarkdown works)
       let md = '';
-      sectionsMap.forEach((songs, sectionTitle) => {
+      sectionOrder.forEach((sectionTitle) => {
+        const songsForSection = sectionsMap.get(sectionTitle) || [];
         md += `## ${sectionTitle}\n`;
-        songs.forEach(s => {
+        songsForSection.forEach(s => {
           md += `- ${s.song} — ${s.artist}  \n`;
         });
         md += '\n';
@@ -223,6 +245,7 @@ export const Setlist: React.FC = () => {
     } catch (err) {
       console.error('Error loading from Supabase:', err);
       setError('Failed to load from database. Falling back to local storage.');
+      setMasterSongs([]);
       loadSetlistFromLocal();
     } finally {
       setDbLoading(false);
@@ -809,6 +832,31 @@ export const Setlist: React.FC = () => {
     return sorted;
   }, [sortBy, sortDirection]);
 
+  const resetSearchAndSort = useCallback(() => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSortBy('alphabetical');
+    setSortDirection('asc');
+  }, []);
+
+  const getActualOrderItems = useCallback((): { song: string; artist: string; section: string }[] => {
+    if (masterSongs && masterSongs.length > 0) {
+      return masterSongs.map((s) => ({
+        song: s.song,
+        artist: s.artist,
+        section: s.section,
+      }));
+    }
+
+    // Fallback: derive from markdown order (sections as written, then songs in section)
+    const sections = parseMarkdown(markdown);
+    const items: { song: string; artist: string; section: string }[] = [];
+    sections.forEach((section) => {
+      section.songs.forEach((s) => items.push({ song: s.song, artist: s.artist, section: section.title }));
+    });
+    return items;
+  }, [masterSongs, markdown]);
+
   // Get sections in their original order (from database)
   const getOriginalSections = useCallback((): Section[] => {
     return parseMarkdown(markdown);
@@ -1394,21 +1442,48 @@ export const Setlist: React.FC = () => {
                     <ListMusic size={18} />
                     {showBuilder ? 'Master List' : 'Builder'}
                   </button>
-                  <button
-                    onClick={() => setShowSearch(!showSearch)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      darkMode
-                        ? showSearch
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                          : 'bg-gray-600 hover:bg-gray-700 text-white'
-                        : showSearch
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                          : 'bg-gray-400 hover:bg-gray-500 text-white'
-                    }`}
-                    title="Search songs"
-                  >
-                    <Search size={20} />
-                  </button>
+                  {viewMode === 'preview' && (
+                    <button
+                      onClick={() => {
+                        if (!showActualOrderView) {
+                          resetSearchAndSort();
+                          setShowActualOrderView(true);
+                        } else {
+                          setShowActualOrderView(false);
+                        }
+                      }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? showActualOrderView
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
+                          : showActualOrderView
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-gray-400 hover:bg-gray-500 text-white'
+                      }`}
+                      title="Toggle actual master setlist order"
+                    >
+                      {showActualOrderView ? 'Browse/Sort' : 'Actual Order'}
+                    </button>
+                  )}
+
+                  {!showActualOrderView && (
+                    <button
+                      onClick={() => setShowSearch(!showSearch)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        darkMode
+                          ? showSearch
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
+                          : showSearch
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-gray-400 hover:bg-gray-500 text-white'
+                      }`}
+                      title="Search songs"
+                    >
+                      <Search size={20} />
+                    </button>
+                  )}
                   <button
                     onClick={handleDownload}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -1421,7 +1496,16 @@ export const Setlist: React.FC = () => {
                     Download
                   </button>
                   <button
-                    onClick={() => setViewMode(viewMode === 'preview' ? 'crud' : 'preview')}
+                    onClick={() => {
+                      if (viewMode !== 'preview') {
+                        resetSearchAndSort();
+                        setShowActualOrderView(false);
+                        setViewMode('preview');
+                      } else {
+                        setShowActualOrderView(false);
+                        setViewMode('crud');
+                      }
+                    }}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                       darkMode
                         ? viewMode === 'crud'
@@ -1440,7 +1524,7 @@ export const Setlist: React.FC = () => {
                     ) : (
                       <>
                         <X size={18} />
-                        Preview
+                        View
                       </>
                     )}
                   </button>
@@ -2161,12 +2245,38 @@ export const Setlist: React.FC = () => {
               ? 'bg-gray-800 prose-invert prose-headings:text-white prose-p:text-gray-200 prose-strong:text-white prose-code:text-blue-400 prose-pre:bg-gray-900' 
               : 'bg-white shadow-lg prose-headings:text-gray-900 prose-p:text-gray-700'
           }`}>
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              components={markdownComponents}
-            >
-              {getFilteredMarkdown()}
-            </ReactMarkdown>
+            {showActualOrderView ? (
+              <div className="not-prose">
+                <ol className="space-y-2">
+                  {getActualOrderItems().map((item, idx) => (
+                    <li
+                      key={`${item.section}-${item.song}-${item.artist}-${idx}`}
+                      className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${
+                        darkMode ? 'text-white' : 'text-gray-900'
+                      }`}
+                    >
+                      <span className={`font-mono text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {idx + 1}.
+                      </span>
+                      <span className="font-semibold">{item.song}</span>
+                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>— {item.artist}</span>
+                      <span
+                        className={`inline-flex items-center text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                      >
+                        ({item.section})
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
+                {getFilteredMarkdown()}
+              </ReactMarkdown>
+            )}
           </div>
         )}
 

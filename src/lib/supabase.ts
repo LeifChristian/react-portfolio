@@ -12,6 +12,7 @@ export type Song = {
   song: string;
   artist: string;
   order_index: number;
+  master_order?: number;
   created_at?: string;
   updated_at?: string;
 };

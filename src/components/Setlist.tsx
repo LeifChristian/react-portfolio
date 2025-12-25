@@ -1382,12 +1382,12 @@ export const Setlist: React.FC = () => {
             </button>
           </div>
         )}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:justify-between sm:items-center">
           <h1 className="text-3xl font-bold">
             {showBuilder && currentSetlistId ? setlistName || 'Custom Setlist' : 'Setlist'}
           </h1>
           {!isEditing ? (
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center sm:justify-end">
               {showBuilder && currentSetlistId ? (
                 // Custom Setlist View - Show custom setlist buttons
                 <>

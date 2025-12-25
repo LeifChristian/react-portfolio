@@ -106,6 +106,7 @@ export const Setlist: React.FC = () => {
   const [newBuilderSectionName, setNewBuilderSectionName] = useState('');
   const [builderEditMode, setBuilderEditMode] = useState(true);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [draggedMasterSong, setDraggedMasterSong] = useState<{section: string, index: number} | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -193,16 +194,20 @@ export const Setlist: React.FC = () => {
 
       if (error) throw error;
 
-      // Group songs by section
-      const sectionsMap = new Map<string, { song: string; artist: string }[]>();
+      // Group songs by section, preserving order_index
+      const sectionsMap = new Map<string, { song: string; artist: string; order_index: number }[]>();
       songs?.forEach((song: SupabaseSong) => {
         if (!sectionsMap.has(song.section)) {
           sectionsMap.set(song.section, []);
         }
-        sectionsMap.get(song.section)!.push({ song: song.song, artist: song.artist });
+        sectionsMap.get(song.section)!.push({ 
+          song: song.song, 
+          artist: song.artist,
+          order_index: song.order_index 
+        });
       });
 
-      // Convert to markdown format
+      // Convert to markdown format (keep bullet format so parseMarkdown works)
       let md = '';
       sectionsMap.forEach((songs, sectionTitle) => {
         md += `## ${sectionTitle}\n`;
@@ -698,7 +703,10 @@ export const Setlist: React.FC = () => {
       }
 
       // Check for list item (song)
-      const songMatch = line.match(/^-\s+(.+?)\s*[—–-]\s*(.+)$/);
+      // Supports both:
+      // - "- Song — Artist"
+      // - "1. Song — Artist"
+      const songMatch = line.match(/^(?:-\s+|\d+\.\s+)(.+?)\s*[—–-]\s*(.+)$/);
       if (songMatch && currentSection) {
         currentSection.songs.push({
           song: songMatch[1].trim(),
@@ -801,20 +809,29 @@ export const Setlist: React.FC = () => {
     return sorted;
   }, [sortBy, sortDirection]);
 
+  // Get sections in their original order (from database)
+  const getOriginalSections = useCallback((): Section[] => {
+    return parseMarkdown(markdown);
+  }, [markdown]);
+
   // Get filtered and sorted markdown for display
   const getFilteredMarkdown = useCallback((): string => {
     const sections = parseMarkdown(markdown);
     const filteredSections = getFilteredSections(sections, searchQuery);
-    const sortedSections = getSortedSections(filteredSections);
-    return sectionsToMarkdown(sortedSections);
-  }, [markdown, searchQuery, getFilteredSections, getSortedSections]);
+    // Only apply sorting if there's a search query or sort is not default
+    const shouldSort = searchQuery.trim() || sortBy !== 'alphabetical' || sortDirection !== 'asc';
+    const finalSections = shouldSort ? getSortedSections(filteredSections) : filteredSections;
+    return sectionsToMarkdown(finalSections);
+  }, [markdown, searchQuery, sortBy, sortDirection, getFilteredSections, getSortedSections]);
 
   // Get filtered and sorted sections for CRUD view
   const getDisplaySections = useCallback((): Section[] => {
     const sections = parseMarkdown(markdown);
     const filteredSections = getFilteredSections(sections, searchQuery);
-    return getSortedSections(filteredSections);
-  }, [markdown, searchQuery, getFilteredSections, getSortedSections]);
+    // Only apply sorting if there's a search query or sort is not default
+    const shouldSort = searchQuery.trim() || sortBy !== 'alphabetical' || sortDirection !== 'asc';
+    return shouldSort ? getSortedSections(filteredSections) : filteredSections;
+  }, [markdown, searchQuery, sortBy, sortDirection, getFilteredSections, getSortedSections]);
 
   // CRUD operations
   const [newSectionName, setNewSectionName] = useState('');
@@ -1024,6 +1041,47 @@ export const Setlist: React.FC = () => {
     } catch (err) {
       console.error('Error deleting song from DB:', err);
       setError('Failed to delete song from database.');
+    }
+  };
+
+  // Handle drag and drop reordering for master setlist
+  const handleReorderMasterSong = async (sectionTitle: string, fromIndex: number, toIndex: number) => {
+    try {
+      // Get all songs in the section
+      const { data: songs, error: fetchError } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('section', sectionTitle)
+        .order('order_index', { ascending: true });
+
+      if (fetchError) throw fetchError;
+      if (!songs || songs.length === 0) return;
+
+      // Reorder the array
+      const reorderedSongs = [...songs];
+      const [movedSong] = reorderedSongs.splice(fromIndex, 1);
+      reorderedSongs.splice(toIndex, 0, movedSong);
+
+      // Update order_index for all songs in the section
+      const updates = reorderedSongs.map((song, index) => ({
+        id: song.id,
+        order_index: index
+      }));
+
+      // Update all songs
+      for (const update of updates) {
+        const { error: updateError } = await supabase
+          .from('songs')
+          .update({ order_index: update.order_index })
+          .eq('id', update.id);
+
+        if (updateError) throw updateError;
+      }
+
+      await loadSetlistFromDB();
+    } catch (err) {
+      console.error('Error reordering song:', err);
+      setError('Failed to reorder song.');
     }
   };
 
@@ -1262,8 +1320,9 @@ export const Setlist: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen p-8 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-      <div className="max-w-4xl mx-auto">
+    <>
+      <div className={`min-h-screen p-8 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className="max-w-4xl mx-auto">
         {error && (
           <div className={`mb-4 p-3 rounded-lg ${darkMode ? 'bg-red-900/50 border border-red-700' : 'bg-red-100 border border-red-300'}`}>
             <p className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-700'}`}>{error}</p>
@@ -1423,11 +1482,30 @@ export const Setlist: React.FC = () => {
               <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Search & Sort
               </h2>
-              <button
-                onClick={() => {
-                  setShowSearch(false);
-                  setSearchQuery('');
-                }}
+              <div className="flex gap-2">
+                {(searchQuery.trim() || sortBy !== 'alphabetical' || sortDirection !== 'asc') && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSortBy('alphabetical');
+                      setSortDirection('asc');
+                    }}
+                    className={`px-3 py-1 text-sm rounded font-medium transition-colors ${
+                      darkMode
+                        ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
+                    }`}
+                  >
+                    Reset to Default Order
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowSearch(false);
+                    setSearchQuery('');
+                    setSortBy('alphabetical');
+                    setSortDirection('asc');
+                  }}
                 className={`p-2 rounded transition-colors ${
                   darkMode
                     ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
@@ -1437,6 +1515,7 @@ export const Setlist: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
+          </div>
             <div className="mb-4">
               <div className="relative">
                 <input
@@ -1626,20 +1705,69 @@ export const Setlist: React.FC = () => {
             </div>
 
             {/* Songs List */}
-            {getDisplaySections().map((section, sectionIdx) => (
-              <div key={sectionIdx} className="mb-6">
-                <h3 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {section.title}
-                </h3>
-                <div className="space-y-2">
-                  {section.songs.map((songItem, songIdx) => (
-                    <div
-                      key={songIdx}
-                      className={`flex items-center gap-3 p-3 rounded ${
-                        darkMode ? 'bg-gray-700' : 'bg-gray-50'
-                      }`}
-                    >
-                      {editingItem?.section === section.title && editingItem?.index === songIdx ? (
+            {(() => {
+              const displaySections = getDisplaySections();
+              const originalSections = getOriginalSections();
+              let globalNumber = 1;
+              
+              // Calculate starting numbers for each section based on original order
+              const sectionStartNumbers = new Map<string, number>();
+              originalSections.forEach((section) => {
+                sectionStartNumbers.set(section.title, globalNumber);
+                globalNumber += section.songs.length;
+              });
+              
+              return displaySections.map((section, sectionIdx) => {
+                const startNumber = sectionStartNumbers.get(section.title) || 1;
+                return (
+                  <div key={sectionIdx} className="mb-6">
+                    <h3 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {section.title}
+                    </h3>
+                    <div className="space-y-2">
+                      {section.songs.map((songItem, songIdx) => {
+                        // Find original index in the original sections
+                        const originalSection = originalSections.find(s => s.title === section.title);
+                        const originalIndex = originalSection?.songs.findIndex(
+                          s => s.song === songItem.song && s.artist === songItem.artist
+                        ) ?? songIdx;
+                        const songNumber = startNumber + originalIndex;
+                        
+                        return (
+                          <div
+                            key={songIdx}
+                            draggable
+                            onDragStart={(e) => {
+                              setDraggedMasterSong({ section: section.title, index: songIdx });
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedMasterSong && 
+                                  (draggedMasterSong.section !== section.title || draggedMasterSong.index !== songIdx)) {
+                                // Only reorder within the same section for now
+                                if (draggedMasterSong.section === section.title) {
+                                  handleReorderMasterSong(section.title, draggedMasterSong.index, songIdx);
+                                }
+                              }
+                              setDraggedMasterSong(null);
+                            }}
+                            className={`flex items-center gap-3 p-3 rounded border-2 transition-all ${
+                              darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                            } ${draggedMasterSong?.section === section.title && draggedMasterSong?.index === songIdx ? 'opacity-50' : ''} hover:border-gray-400`}
+                          >
+                            <GripVertical
+                              size={20}
+                              className={`cursor-move ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                            />
+                            <span className={`font-mono text-sm w-8 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {songNumber}.
+                            </span>
+                            {editingItem?.section === section.title && editingItem?.index === songIdx ? (
                         <>
                           <input
                             type="text"
@@ -1710,11 +1838,14 @@ export const Setlist: React.FC = () => {
                           </button>
                         </>
                       )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                  </div>
+                );
+              });
+            })()}
           </div>
         ) : showBuilder ? (
           /* Set List Builder */
@@ -1999,7 +2130,7 @@ export const Setlist: React.FC = () => {
                     )}
                     <div className="flex-1">
                       <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {song.song}
+                        {index + 1}. {song.song}
                       </p>
                       <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         {song.artist} • {song.section}
@@ -2189,11 +2320,13 @@ export const Setlist: React.FC = () => {
             </form>
           </div>
         )}
+        </div>
+      </div>
 
-        {/* Delete Confirmation Dialog */}
-        <Transition appear show={deletingItem !== null} as={Fragment}>
-          <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setDeletingItem(null)}>
-            <div className="min-h-screen px-4 text-center">
+      {/* Delete Confirmation Dialog */}
+      <Transition appear show={deletingItem !== null} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setDeletingItem(null)}>
+          <div className="min-h-screen px-4 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -2264,14 +2397,14 @@ export const Setlist: React.FC = () => {
                   </div>
                 </div>
               </Transition.Child>
-            </div>
-          </Dialog>
-        </Transition>
+          </div>
+        </Dialog>
+      </Transition>
 
-        {/* Save Confirmation Dialog */}
-        <Transition appear show={showSaveConfirm} as={Fragment}>
-          <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setShowSaveConfirm(false)}>
-            <div className="min-h-screen px-4 text-center">
+      {/* Save Confirmation Dialog */}
+      <Transition appear show={showSaveConfirm} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setShowSaveConfirm(false)}>
+          <div className="min-h-screen px-4 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
@@ -2339,11 +2472,10 @@ export const Setlist: React.FC = () => {
                   </div>
                 </div>
               </Transition.Child>
-            </div>
-          </Dialog>
-        </Transition>
-      </div>
-    </div>
+          </div>
+        </Dialog>
+      </Transition>
+    </>
   );
 };
 

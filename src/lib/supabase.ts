@@ -31,3 +31,20 @@ export type Note = {
   created_at?: string;
 };
 
+export type CustomSetlist = {
+  id?: number;
+  name: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type CustomSetlistSong = {
+  id?: number;
+  setlist_id: number;
+  section: string;
+  song: string;
+  artist: string;
+  order_index: number;
+  created_at?: string;
+};
+

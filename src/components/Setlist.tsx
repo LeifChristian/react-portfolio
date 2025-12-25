@@ -4,8 +4,8 @@ import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useThemeContext } from '../ThemeProvider';
-import { Edit2, Save, X, Download, Trash2, Plus, Send, Search } from 'lucide-react';
-import { supabase, Song as SupabaseSong, Note } from '../lib/supabase';
+import { Edit2, Save, X, Download, Trash2, Plus, Send, Search, GripVertical, ListMusic } from 'lucide-react';
+import { supabase, Song as SupabaseSong, Note, CustomSetlist, CustomSetlistSong } from '../lib/supabase';
 
 const SETLIST_STORAGE_KEY = 'setlist_content';
 const SETLIST_PASSWORD_HASH_KEY = 'setlist_password_hash';
@@ -96,6 +96,16 @@ export const Setlist: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'alphabetical' | 'genre'>('alphabetical');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [builderSongs, setBuilderSongs] = useState<{section: string, song: string, artist: string, id: string}[]>([]);
+  const [customSetlists, setCustomSetlists] = useState<CustomSetlist[]>([]);
+  const [currentSetlistId, setCurrentSetlistId] = useState<number | null>(null);
+  const [setlistName, setSetlistName] = useState('');
+  const [draggedItem, setDraggedItem] = useState<{section: string, song: string, artist: string, id: string} | null>(null);
+  const [newBuilderSong, setNewBuilderSong] = useState({ section: '', song: '', artist: '' });
+  const [newBuilderSectionName, setNewBuilderSectionName] = useState('');
+  const [builderEditMode, setBuilderEditMode] = useState(true);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -312,12 +322,175 @@ export const Setlist: React.FC = () => {
     }
   }, []);
 
+  // Load custom setlists
+  const loadCustomSetlists = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('custom_setlists')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCustomSetlists(data || []);
+    } catch (err) {
+      console.error('Error loading custom setlists:', err);
+    }
+  }, []);
+
+  // Load a custom setlist
+  const loadCustomSetlist = useCallback(async (setlistId: number) => {
+    try {
+      const { data: songs, error } = await supabase
+        .from('custom_setlist_songs')
+        .select('*')
+        .eq('setlist_id', setlistId)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+
+      const loadedSongs = (songs || []).map((song) => ({
+        section: song.section,
+        song: song.song,
+        artist: song.artist,
+        id: `${song.section}-${song.song}-${song.artist}-${song.id}`
+      }));
+
+      setBuilderSongs(loadedSongs);
+      setCurrentSetlistId(setlistId);
+      setBuilderEditMode(false); // Start in view mode when loading existing setlist
+      
+      // Get setlist name
+      const { data: setlist } = await supabase
+        .from('custom_setlists')
+        .select('name')
+        .eq('id', setlistId)
+        .single();
+      
+      if (setlist) {
+        setSetlistName(setlist.name);
+      }
+    } catch (err) {
+      console.error('Error loading custom setlist:', err);
+      setError('Failed to load setlist.');
+    }
+  }, []);
+
+  // Save current builder as a custom setlist
+  const saveCustomSetlist = useCallback(async () => {
+    if (!setlistName.trim()) {
+      setError('Please enter a name for the setlist.');
+      return;
+    }
+
+    try {
+      let finalSetlistId = currentSetlistId;
+
+      if (currentSetlistId) {
+        // Update existing setlist
+        const { error: updateError } = await supabase
+          .from('custom_setlists')
+          .update({ name: setlistName.trim() })
+          .eq('id', currentSetlistId);
+
+        if (updateError) throw updateError;
+
+        // Delete existing songs
+        const { error: deleteError } = await supabase
+          .from('custom_setlist_songs')
+          .delete()
+          .eq('setlist_id', currentSetlistId);
+
+        if (deleteError) throw deleteError;
+        finalSetlistId = currentSetlistId;
+      } else {
+        // Create new setlist
+        const { data: newSetlist, error: insertError } = await supabase
+          .from('custom_setlists')
+          .insert({ name: setlistName.trim() })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        finalSetlistId = newSetlist.id;
+        setCurrentSetlistId(newSetlist.id);
+      }
+
+      // Insert songs
+      const songsToInsert: Omit<CustomSetlistSong, 'id' | 'created_at'>[] = builderSongs.map((song, index) => ({
+        setlist_id: finalSetlistId!,
+        section: song.section,
+        song: song.song,
+        artist: song.artist,
+        order_index: index
+      }));
+
+      if (songsToInsert.length > 0) {
+        const { error: songsError } = await supabase
+          .from('custom_setlist_songs')
+          .insert(songsToInsert);
+
+        if (songsError) throw songsError;
+      }
+
+      await loadCustomSetlists();
+      setError('');
+      setShowSaveConfirm(false); // Close confirmation dialog
+      setBuilderEditMode(false); // Switch to view mode after saving
+    } catch (err) {
+      console.error('Error saving custom setlist:', err);
+      setError('Failed to save setlist.');
+      setShowSaveConfirm(false); // Close dialog even on error
+    }
+  }, [setlistName, builderSongs, currentSetlistId, loadCustomSetlists]);
+
+  // Delete a custom setlist
+  const deleteCustomSetlist = useCallback(async (setlistId: number) => {
+    try {
+      const { error } = await supabase
+        .from('custom_setlists')
+        .delete()
+        .eq('id', setlistId);
+
+      if (error) throw error;
+      await loadCustomSetlists();
+      
+      if (currentSetlistId === setlistId) {
+        setCurrentSetlistId(null);
+        setSetlistName('');
+        setBuilderSongs([]);
+      }
+    } catch (err) {
+      console.error('Error deleting custom setlist:', err);
+      setError('Failed to delete setlist.');
+    }
+  }, [currentSetlistId, loadCustomSetlists]);
+
   // Load setlist when authenticated and user is selected
   useEffect(() => {
     if (isAuthenticated && selectedUser) {
       loadSetlist();
+      loadCustomSetlists();
     }
-  }, [isAuthenticated, selectedUser, loadSetlist]);
+  }, [isAuthenticated, selectedUser, loadSetlist, loadCustomSetlists]);
+
+  // Initialize builder with all songs when builder is opened
+  useEffect(() => {
+    if (showBuilder && builderSongs.length === 0 && markdown) {
+      const sections = parseMarkdown(markdown);
+      const allSongs: {section: string, song: string, artist: string, id: string}[] = [];
+      sections.forEach((section) => {
+        section.songs.forEach((song) => {
+          allSongs.push({
+            section: section.title,
+            song: song.song,
+            artist: song.artist,
+            id: `${section.title}-${song.song}-${song.artist}-${Date.now()}-${Math.random()}`
+          });
+        });
+      });
+      setBuilderSongs(allSongs);
+    }
+  }, [showBuilder, markdown]);
 
   // Load notes when authenticated and user is selected
   useEffect(() => {
@@ -1074,6 +1247,21 @@ export const Setlist: React.FC = () => {
           <h1 className="text-3xl font-bold">Setlist</h1>
           {!isEditing ? (
             <div className="flex gap-2 items-center">
+              <button
+                onClick={() => setShowBuilder(!showBuilder)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  darkMode
+                    ? showBuilder
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-gray-600 hover:bg-gray-700 text-white'
+                    : showBuilder
+                      ? 'bg-green-500 hover:bg-green-600 text-white'
+                      : 'bg-gray-400 hover:bg-gray-500 text-white'
+                }`}
+              >
+                <ListMusic size={18} />
+                {showBuilder ? 'Master List' : 'Builder'}
+              </button>
               {dbLoading && (
                 <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
               )}
@@ -1456,6 +1644,314 @@ export const Setlist: React.FC = () => {
               </div>
             ))}
           </div>
+        ) : showBuilder ? (
+          /* Set List Builder */
+          <div className={`rounded-lg p-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
+            <div className="mb-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={setlistName}
+                    onChange={(e) => setSetlistName(e.target.value)}
+                    placeholder="Enter setlist name..."
+                    disabled={!builderEditMode && currentSetlistId !== null}
+                    className={`w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      darkMode
+                        ? builderEditMode || !currentSetlistId
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                          : 'bg-gray-600 border-gray-700 text-gray-400 cursor-not-allowed'
+                        : builderEditMode || !currentSetlistId
+                          ? 'bg-white border-gray-300 text-gray-900'
+                          : 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+                    }`}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {currentSetlistId ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          Editing: {setlistName || 'Untitled Setlist'}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          New Setlist
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {currentSetlistId && (
+                    <button
+                      onClick={() => setBuilderEditMode(!builderEditMode)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? builderEditMode
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
+                          : builderEditMode
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-gray-400 hover:bg-gray-500 text-white'
+                      }`}
+                    >
+                      {builderEditMode ? (
+                        <>
+                          <X size={18} className="inline mr-1" />
+                          Cancel Edit
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 size={18} className="inline mr-1" />
+                          Edit
+                        </>
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (currentSetlistId && builderEditMode) {
+                        setShowSaveConfirm(true);
+                      } else {
+                        saveCustomSetlist();
+                      }
+                    }}
+                    disabled={!setlistName.trim() || (!builderEditMode && currentSetlistId !== null)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      darkMode
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                  >
+                    <Save size={18} className="inline mr-1" />
+                    {currentSetlistId ? 'Save Changes' : 'Save Setlist'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Custom Setlists List */}
+              {customSetlists.length > 0 && (
+                <div className={`mb-4 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <p className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Saved Setlists:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {customSetlists.map((setlist) => (
+                      <div
+                        key={setlist.id}
+                        className={`flex items-center gap-2 px-3 py-1 rounded ${
+                          currentSetlistId === setlist.id
+                            ? darkMode
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-500 text-white'
+                            : darkMode
+                              ? 'bg-gray-600 text-gray-200'
+                              : 'bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <button
+                          onClick={() => loadCustomSetlist(setlist.id!)}
+                          className="text-sm hover:underline"
+                        >
+                          {setlist.name}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete "${setlist.name}"?`)) {
+                              deleteCustomSetlist(setlist.id!);
+                            }
+                          }}
+                          className="hover:opacity-70"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Add New Song Form */}
+            {builderEditMode && (
+              <div className={`mb-4 p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <h3 className={`text-lg font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Add New Song
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <select
+                  value={newBuilderSong.section}
+                  onChange={(e) => setNewBuilderSong({ ...newBuilderSong, section: e.target.value })}
+                  className={`px-3 py-2 rounded border ${
+                    darkMode
+                      ? 'bg-gray-600 text-white border-gray-500'
+                      : 'bg-white text-gray-900 border-gray-300'
+                  }`}
+                >
+                  <option value="">Select Section</option>
+                  {(() => {
+                    const sections = new Set(builderSongs.map(s => s.section));
+                    return Array.from(sections).map((section, idx) => (
+                      <option key={idx} value={section}>
+                        {section}
+                      </option>
+                    ));
+                  })()}
+                  <option value="__NEW__">+ New Section</option>
+                </select>
+                {newBuilderSong.section === '__NEW__' ? (
+                  <input
+                    type="text"
+                    placeholder="New Section Name"
+                    value={newBuilderSectionName}
+                    onChange={(e) => setNewBuilderSectionName(e.target.value)}
+                    className={`px-3 py-2 rounded border ${
+                      darkMode
+                        ? 'bg-gray-600 text-white border-gray-500'
+                        : 'bg-white text-gray-900 border-gray-300'
+                    }`}
+                  />
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Song Name"
+                      value={newBuilderSong.song}
+                      onChange={(e) => setNewBuilderSong({ ...newBuilderSong, song: e.target.value })}
+                      className={`px-3 py-2 rounded border ${
+                        darkMode
+                          ? 'bg-gray-600 text-white border-gray-500'
+                          : 'bg-white text-gray-900 border-gray-300'
+                      }`}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Artist"
+                      value={newBuilderSong.artist}
+                      onChange={(e) => setNewBuilderSong({ ...newBuilderSong, artist: e.target.value })}
+                      className={`px-3 py-2 rounded border ${
+                        darkMode
+                          ? 'bg-gray-600 text-white border-gray-500'
+                          : 'bg-white text-gray-900 border-gray-300'
+                      }`}
+                    />
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    const sectionTitle = newBuilderSong.section === '__NEW__' ? newBuilderSectionName : newBuilderSong.section;
+                    if (!sectionTitle || (newBuilderSong.section !== '__NEW__' && (!newBuilderSong.song || !newBuilderSong.artist))) {
+                      return;
+                    }
+                    
+                    const newSong = {
+                      section: sectionTitle,
+                      song: newBuilderSong.song || '',
+                      artist: newBuilderSong.artist || '',
+                      id: `${sectionTitle}-${newBuilderSong.song}-${newBuilderSong.artist}-${Date.now()}-${Math.random()}`
+                    };
+                    
+                    setBuilderSongs([...builderSongs, newSong]);
+                    setNewBuilderSong({ section: '', song: '', artist: '' });
+                    setNewBuilderSectionName('');
+                  }}
+                  disabled={!newBuilderSong.section || (newBuilderSong.section === '__NEW__' ? !newBuilderSectionName : (!newBuilderSong.song || !newBuilderSong.artist))}
+                  className={`px-4 py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    darkMode
+                      ? 'bg-green-600 hover:bg-green-700 text-white disabled:bg-gray-600'
+                      : 'bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-400'
+                  }`}
+                >
+                  <Plus size={18} className="inline mr-1" />
+                  Add
+                </button>
+                </div>
+              </div>
+            )}
+
+            {/* Builder Songs List - Draggable */}
+            <div className={`space-y-2 max-h-[600px] overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-4 rounded-lg`}>
+              {builderSongs.length === 0 ? (
+                <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  No songs in setlist. Add songs using the form above or they'll load from the master list when you first open the builder.
+                </div>
+              ) : (
+                builderSongs.map((song, index) => (
+                  <div
+                    key={song.id}
+                    draggable={builderEditMode}
+                    onDragStart={(e) => {
+                      if (!builderEditMode) {
+                        e.preventDefault();
+                        return;
+                      }
+                      setDraggedItem(song);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={(e) => {
+                      if (!builderEditMode) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                    }}
+                    onDrop={(e) => {
+                      if (!builderEditMode) {
+                        e.preventDefault();
+                        return;
+                      }
+                      e.preventDefault();
+                      if (draggedItem && draggedItem.id !== song.id) {
+                        const newSongs = [...builderSongs];
+                        const draggedIndex = newSongs.findIndex(s => s.id === draggedItem.id);
+                        const dropIndex = newSongs.findIndex(s => s.id === song.id);
+                        newSongs.splice(draggedIndex, 1);
+                        newSongs.splice(dropIndex, 0, draggedItem);
+                        setBuilderSongs(newSongs);
+                      }
+                      setDraggedItem(null);
+                    }}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                      darkMode
+                        ? 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    } ${draggedItem?.id === song.id ? 'opacity-50' : ''} ${!builderEditMode ? 'cursor-default' : ''}`}
+                  >
+                    {builderEditMode && (
+                      <GripVertical
+                        size={20}
+                        className={`cursor-move ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {song.song}
+                      </p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {song.artist} • {song.section}
+                      </p>
+                    </div>
+                    {builderEditMode && (
+                      <button
+                        onClick={() => {
+                          setBuilderSongs(builderSongs.filter(s => s.id !== song.id));
+                        }}
+                        className={`p-2 rounded transition-colors ${
+                          darkMode
+                            ? 'hover:bg-gray-700 text-gray-400 hover:text-white'
+                            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         ) : (
           <div className={`rounded-lg p-6 prose prose-lg max-w-none ${
             darkMode 
@@ -1468,6 +1964,61 @@ export const Setlist: React.FC = () => {
             >
               {getFilteredMarkdown()}
             </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Custom Setlists Section */}
+        {isAuthenticated && selectedUser && (
+          <div className={`mt-8 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'} rounded-lg`}>
+            <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Custom Setlists
+              </h2>
+              <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Click a setlist to open it in the builder
+              </p>
+            </div>
+            <div className="p-4">
+              {customSetlists.length === 0 ? (
+                <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  No custom setlists yet. Create one in the Builder!
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {customSetlists.map((setlist) => (
+                    <button
+                      key={setlist.id}
+                      onClick={() => {
+                        setShowBuilder(true);
+                        loadCustomSetlist(setlist.id!);
+                      }}
+                      className={`p-4 rounded-lg border-2 text-left transition-all ${
+                        darkMode
+                          ? 'bg-gray-700 border-gray-600 hover:border-blue-500 hover:bg-gray-650'
+                          : 'bg-gray-50 border-gray-200 hover:border-blue-400 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {setlist.name}
+                          </p>
+                          <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {setlist.created_at
+                              ? new Date(setlist.created_at).toLocaleDateString()
+                              : ''}
+                          </p>
+                        </div>
+                        <ListMusic
+                          size={20}
+                          className={darkMode ? 'text-gray-400' : 'text-gray-500'}
+                        />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -1637,6 +2188,81 @@ export const Setlist: React.FC = () => {
                       }`}
                     >
                       Delete
+                    </button>
+                  </div>
+                </div>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition>
+
+        {/* Save Confirmation Dialog */}
+        <Transition appear show={showSaveConfirm} as={Fragment}>
+          <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => setShowSaveConfirm(false)}>
+            <div className="min-h-screen px-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-black opacity-50" aria-hidden="true" />
+              </Transition.Child>
+
+              <span className="inline-block h-screen align-middle" aria-hidden="true">
+                &#8203;
+              </span>
+
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <div className={`inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl ${
+                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                }`}>
+                  <Dialog.Title as="h3" className={`text-lg font-medium leading-6 mb-4 ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    Save Changes?
+                  </Dialog.Title>
+                  <div className="mb-4">
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Are you sure you want to save changes to "{setlistName || 'this setlist'}"?
+                    </p>
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      This will overwrite the existing setlist with {builderSongs.length} song{builderSongs.length !== 1 ? 's' : ''}.
+                    </p>
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setShowSaveConfirm(false)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                          : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        saveCustomSetlist();
+                      }}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          : 'bg-green-500 hover:bg-green-600 text-white'
+                      }`}
+                    >
+                      Save Changes
                     </button>
                   </div>
                 </div>

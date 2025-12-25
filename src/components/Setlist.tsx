@@ -92,6 +92,10 @@ export const Setlist: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [notesLoading, setNotesLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const notesContainerRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
+  const notesFetchInProgressRef = useRef(false);
+  const shouldAutoScrollRef = useRef(true);
 
   // Hash function using Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -260,7 +264,24 @@ export const Setlist: React.FC = () => {
   };
 
   const loadNotes = useCallback(async () => {
-    setNotesLoading(true);
+    // Prevent overlapping calls - if a fetch is already in progress, skip this one
+    if (notesFetchInProgressRef.current) {
+      return;
+    }
+
+    // Check if user is at the bottom before refreshing
+    if (notesContainerRef.current) {
+      const container = notesContainerRef.current;
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10; // 10px threshold
+      shouldAutoScrollRef.current = isAtBottom;
+    }
+
+    notesFetchInProgressRef.current = true;
+    
+    if (isMountedRef.current) {
+      setNotesLoading(true);
+    }
+
     try {
       const { data, error } = await supabase
         .from('notes')
@@ -268,12 +289,21 @@ export const Setlist: React.FC = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setNotes(data || []);
+      
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setNotes(data || []);
+      }
     } catch (err) {
       console.error('Error loading notes:', err);
-      setError('Failed to load notes.');
+      if (isMountedRef.current) {
+        setError('Failed to load notes.');
+      }
     } finally {
-      setNotesLoading(false);
+      notesFetchInProgressRef.current = false;
+      if (isMountedRef.current) {
+        setNotesLoading(false);
+      }
     }
   }, []);
 
@@ -305,14 +335,45 @@ export const Setlist: React.FC = () => {
     }
   }, [isAuthenticated, selectedUser, loadNotes]);
 
-  // Auto-scroll to bottom when notes change
+  // Set up interval to refresh notes every 1 minute
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isAuthenticated && selectedUser) {
+      // Refresh notes every 60 seconds (1 minute)
+      const intervalId = setInterval(() => {
+        // Only refresh if component is still mounted and no fetch in progress
+        if (isMountedRef.current && !notesFetchInProgressRef.current) {
+          loadNotes();
+        }
+      }, 60000); // 60000ms = 1 minute
+
+      // Cleanup interval on unmount or when dependencies change
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [isAuthenticated, selectedUser, loadNotes]);
+
+  // Track mounted state for safe state updates
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Auto-scroll to bottom when notes change (only if user was at bottom)
+  useEffect(() => {
+    if (shouldAutoScrollRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [notes]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
+
+    // Always auto-scroll when user sends a message
+    shouldAutoScrollRef.current = true;
 
     try {
       const { error } = await supabase
@@ -1185,7 +1246,7 @@ export const Setlist: React.FC = () => {
             </div>
             
             {/* Messages Container */}
-            <div className={`h-64 overflow-y-scroll p-4 space-y-3 notes-scrollbar rounded-lg border-2 m-4 ${darkMode ? 'bg-gray-900 border-gray-600' : 'bg-gray-200 border-gray-400'}`}>
+            <div ref={notesContainerRef} className={`h-64 overflow-y-scroll p-4 space-y-3 notes-scrollbar rounded-lg border-2 m-4 ${darkMode ? 'bg-gray-900 border-gray-600' : 'bg-gray-200 border-gray-400'}`}>
               {notesLoading ? (
                 <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Loading messages...

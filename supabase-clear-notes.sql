@@ -9,3 +9,4 @@ DELETE FROM notes;
 -- After running DELETE, you can verify it's empty with:
 -- SELECT * FROM notes;
 
+

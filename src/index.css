@@ -160,3 +160,35 @@ code {
     1px 1px 0 #60A5FA,
     2px 2px 4px rgba(0,0,0,0.3);
 }
+
+/* Custom scrollbar styles for notes chat */
+.notes-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notes-scrollbar::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.notes-scrollbar::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 4px;
+}
+
+.notes-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Dark mode scrollbar */
+.dark .notes-scrollbar::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .notes-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .notes-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

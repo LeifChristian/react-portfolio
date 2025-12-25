@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -91,6 +91,7 @@ export const Setlist: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [notesLoading, setNotesLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Hash function using Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -303,6 +304,11 @@ export const Setlist: React.FC = () => {
       };
     }
   }, [isAuthenticated, selectedUser, loadNotes]);
+
+  // Auto-scroll to bottom when notes change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [notes]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1168,7 +1174,7 @@ export const Setlist: React.FC = () => {
 
         {/* Notes/Chat Section */}
         {selectedUser && (
-          <div className={`mt-8 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
+          <div className={`mt-8 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
             <div className={`p-4 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Notes
@@ -1179,7 +1185,7 @@ export const Setlist: React.FC = () => {
             </div>
             
             {/* Messages Container */}
-            <div className={`h-64 overflow-y-auto p-4 space-y-3 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <div className={`h-64 overflow-y-scroll p-4 space-y-3 notes-scrollbar rounded-lg border-2 m-4 ${darkMode ? 'bg-gray-900 border-gray-600' : 'bg-gray-200 border-gray-400'}`}>
               {notesLoading ? (
                 <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Loading messages...
@@ -1229,6 +1235,7 @@ export const Setlist: React.FC = () => {
                   </div>
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}

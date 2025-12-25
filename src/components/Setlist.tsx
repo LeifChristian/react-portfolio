@@ -1532,7 +1532,7 @@ export const Setlist: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleSave}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -1562,11 +1562,11 @@ export const Setlist: React.FC = () => {
         {/* Search Panel */}
         {showSearch && (
           <div className={`mb-6 rounded-lg p-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 Search & Sort
               </h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 sm:justify-end">
                 {(searchQuery.trim() || sortBy !== 'alphabetical' || sortDirection !== 'asc') && (
                   <button
                     onClick={() => {
@@ -1935,7 +1935,7 @@ export const Setlist: React.FC = () => {
           /* Set List Builder */
           <div className={`rounded-lg p-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
             <div className="mb-6">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -1969,7 +1969,7 @@ export const Setlist: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 sm:justify-end">
                   {currentSetlistId && (
                     <button
                       onClick={() => setBuilderEditMode(!builderEditMode)}
@@ -2483,7 +2483,7 @@ export const Setlist: React.FC = () => {
                       </p>
                     </div>
                   )}
-                  <div className="flex gap-3 justify-end">
+                  <div className="flex flex-wrap gap-3 justify-end">
                     <button
                       onClick={() => setDeletingItem(null)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -2556,7 +2556,7 @@ export const Setlist: React.FC = () => {
                       This will overwrite the existing setlist with {builderSongs.length} song{builderSongs.length !== 1 ? 's' : ''}.
                     </p>
                   </div>
-                  <div className="flex gap-3 justify-end">
+                  <div className="flex flex-wrap gap-3 justify-end">
                     <button
                       onClick={() => setShowSaveConfirm(false)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${

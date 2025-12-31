@@ -109,11 +109,10 @@ export const Setlist: React.FC = () => {
   const [draggedMasterSong, setDraggedMasterSong] = useState<{section: string, index: number} | null>(null);
   const [showActualOrderView, setShowActualOrderView] = useState(false);
   const [masterSongs, setMasterSongs] = useState<SupabaseSong[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const notesContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
   const notesFetchInProgressRef = useRef(false);
-  const shouldAutoScrollRef = useRef(true);
+  const pendingNotesScrollBehaviorRef = useRef<ScrollBehavior | null>(null);
 
   // Hash function using Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -306,18 +305,29 @@ export const Setlist: React.FC = () => {
     loadNotes();
   };
 
-  const loadNotes = useCallback(async () => {
+  const isNotesAtBottom = useCallback((): boolean => {
+    const container = notesContainerRef.current;
+    if (!container) return true;
+    return container.scrollHeight - container.scrollTop <= container.clientHeight + 10; // 10px threshold
+  }, []);
+
+  const scrollNotesToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    const container = notesContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior });
+  }, []);
+
+  const loadNotes = useCallback(async (options?: { scroll?: 'never' | 'if-at-bottom' | 'always'; scrollBehavior?: ScrollBehavior }) => {
     // Prevent overlapping calls - if a fetch is already in progress, skip this one
     if (notesFetchInProgressRef.current) {
       return;
     }
 
-    // Check if user is at the bottom before refreshing
-    if (notesContainerRef.current) {
-      const container = notesContainerRef.current;
-      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10; // 10px threshold
-      shouldAutoScrollRef.current = isAtBottom;
-    }
+    const scrollMode = options?.scroll ?? 'never';
+    const scrollBehavior = options?.scrollBehavior ?? 'auto';
+    const wasAtBottom = isNotesAtBottom();
+    const shouldScrollAfterLoad =
+      scrollMode === 'always' || (scrollMode === 'if-at-bottom' && wasAtBottom);
 
     notesFetchInProgressRef.current = true;
     
@@ -336,6 +346,7 @@ export const Setlist: React.FC = () => {
       // Only update state if component is still mounted
       if (isMountedRef.current) {
         setNotes(data || []);
+        pendingNotesScrollBehaviorRef.current = shouldScrollAfterLoad ? scrollBehavior : null;
       }
     } catch (err) {
       console.error('Error loading notes:', err);
@@ -348,7 +359,7 @@ export const Setlist: React.FC = () => {
         setNotesLoading(false);
       }
     }
-  }, []);
+  }, [isNotesAtBottom]);
 
   // Load custom setlists
   const loadCustomSetlists = useCallback(async () => {
@@ -523,14 +534,14 @@ export const Setlist: React.FC = () => {
   // Load notes when authenticated and user is selected
   useEffect(() => {
     if (isAuthenticated && selectedUser) {
-      loadNotes();
+      loadNotes({ scroll: 'never' });
       // Set up real-time subscription for notes
       const notesSubscription = supabase
         .channel('notes_changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'notes' },
           () => {
-            loadNotes();
+            loadNotes({ scroll: 'if-at-bottom', scrollBehavior: 'smooth' });
           }
         )
         .subscribe();
@@ -548,7 +559,7 @@ export const Setlist: React.FC = () => {
       const intervalId = setInterval(() => {
         // Only refresh if component is still mounted and no fetch in progress
         if (isMountedRef.current && !notesFetchInProgressRef.current) {
-          loadNotes();
+          loadNotes({ scroll: 'never' });
         }
       }, 60000); // 60000ms = 1 minute
 
@@ -567,19 +578,17 @@ export const Setlist: React.FC = () => {
     };
   }, []);
 
-  // Auto-scroll to bottom when notes change (only if user was at bottom)
+  // Apply any pending container-only scroll after notes render (never scroll the whole page)
   useEffect(() => {
-    if (shouldAutoScrollRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [notes]);
+    const behavior = pendingNotesScrollBehaviorRef.current;
+    if (!behavior) return;
+    pendingNotesScrollBehaviorRef.current = null;
+    requestAnimationFrame(() => scrollNotesToBottom(behavior));
+  }, [notes, scrollNotesToBottom]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
-
-    // Always auto-scroll when user sends a message
-    shouldAutoScrollRef.current = true;
 
     try {
       const { error } = await supabase
@@ -592,7 +601,7 @@ export const Setlist: React.FC = () => {
       if (error) throw error;
       setNewMessage('');
       // Reload notes immediately to show the new message
-      await loadNotes();
+      await loadNotes({ scroll: 'always', scrollBehavior: 'smooth' });
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message.');
@@ -1195,6 +1204,16 @@ export const Setlist: React.FC = () => {
     return `https://www.google.com/search?q=${searchQuery}`;
   };
 
+  const createChordsSearchUrl = (songText: string): string => {
+    const parts = songText.split(/[—–-]/).map((p) => p.trim()).filter(Boolean);
+    const songName = parts[0] || '';
+    const artistName = parts.slice(1).join(' ');
+    const searchQuery = encodeURIComponent(
+      artistName ? `${songName} ${artistName} chords` : `${songName} chords`
+    );
+    return `https://www.google.com/search?q=${searchQuery}`;
+  };
+
   // Custom components for ReactMarkdown to make songs clickable
   const markdownComponents = {
     li: ({ children, ...props }: any) => {
@@ -1205,20 +1224,34 @@ export const Setlist: React.FC = () => {
         const songName = fullText.split(/[—–-]/)[0].trim();
         if (songName) {
           const searchUrl = createLyricsSearchUrl(fullText);
+          const chordsUrl = createChordsSearchUrl(fullText);
           return (
-            <li {...props} style={{ cursor: 'pointer' }}>
-              <a 
-                href={searchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ 
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer'
-                }}
-              >
-                {children}
-              </a>
+            <li {...props}>
+              <span className="inline-flex items-baseline gap-2">
+                <a
+                  href={searchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {children}
+                </a>
+                <a
+                  href={chordsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs opacity-70 hover:opacity-100"
+                  aria-label={`Chords search for ${songName}`}
+                  title="Chords"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  ~
+                </a>
+              </span>
             </li>
           );
         }
@@ -2213,12 +2246,44 @@ export const Setlist: React.FC = () => {
                       />
                     )}
                     <div className="flex-1">
-                      <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {index + 1}. {song.song}
-                      </p>
-                      <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {song.artist} • {song.section}
-                      </p>
+                      {!builderEditMode ? (
+                        <div className="flex items-start justify-between gap-3">
+                          <a
+                            href={createLyricsSearchUrl(`${song.song} — ${song.artist}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block flex-1"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {index + 1}. {song.song}
+                            </p>
+                            <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {song.artist} • {song.section}
+                            </p>
+                          </a>
+                          <a
+                            href={createChordsSearchUrl(`${song.song} — ${song.artist}`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 text-xs opacity-70 hover:opacity-100"
+                            aria-label={`Chords search for ${song.song}`}
+                            title="Chords"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            ~
+                          </a>
+                        </div>
+                      ) : (
+                        <>
+                          <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {index + 1}. {song.song}
+                          </p>
+                          <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            {song.artist} • {song.section}
+                          </p>
+                        </>
+                      )}
                     </div>
                     {builderEditMode && (
                       <button
@@ -2258,12 +2323,33 @@ export const Setlist: React.FC = () => {
                       <span className={`font-mono text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         {idx + 1}.
                       </span>
-                      <span className="font-semibold">{item.song}</span>
-                      <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>— {item.artist}</span>
-                      <span
-                        className={`inline-flex items-center text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
-                      >
-                        ({item.section})
+                      <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <a
+                          href={createLyricsSearchUrl(`${item.song} — ${item.artist}`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex flex-wrap items-center gap-x-2 gap-y-1"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <span className="font-semibold">{item.song}</span>
+                          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>— {item.artist}</span>
+                          <span
+                            className={`inline-flex items-center text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}
+                          >
+                            ({item.section})
+                          </span>
+                        </a>
+                        <a
+                          href={createChordsSearchUrl(`${item.song} — ${item.artist}`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs opacity-70 hover:opacity-100"
+                          aria-label={`Chords search for ${item.song}`}
+                          title="Chords"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          ~
+                        </a>
                       </span>
                     </li>
                   ))}
@@ -2398,7 +2484,7 @@ export const Setlist: React.FC = () => {
                   </div>
                 ))
               )}
-              <div ref={messagesEndRef} />
+              {/* Intentionally no scroll-into-view anchor; we only scroll the notes container when needed */}
             </div>
 
             {/* Message Input */}

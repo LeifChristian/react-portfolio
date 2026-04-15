@@ -16,7 +16,7 @@ export const portfolioData = [
     videoUrls: ['https://www.youtube.com/watch?v=V-ySIouF6fQ&t=258s'],
     link: '',
     description:
-      'Hustle fundraising demo. Hustle crowdfunding platform demo.'
+      'Hustle crowdfunding platform for fraternities and sororities (demo).'
   },
   {
     title: 'Gaussian Splat & 3D Rendering',

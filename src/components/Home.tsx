@@ -352,7 +352,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
                       animationDelay: marqueeIdx === 0 ? `${MARQUEE_START_DELAY_MS}ms` : '0ms',
                     }}
                   >
-                    <div className="home-hero-text-glow px-4 text-balance whitespace-pre-line font-grotesk text-[22px] sm:text-[30px] md:text-[36px] leading-snug font-normal tracking-wide text-white">
+                    <div className="home-hero-text-glow px-4 text-balance whitespace-pre-line font-grotesk text-[20px] sm:text-[27px] md:text-[32px] leading-snug font-normal tracking-wide text-white">
                       {marqueeSlides[marqueeIdx]}
                     </div>
                   </div>
@@ -381,9 +381,12 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
                   <div
                     className="group drop-shadow-[0_18px_60px_rgba(0,0,0,0.55)]"
                     style={{
-                      width: 'min(760px, 92vw)',
-                      maxWidth: 760,
-                      overflow: 'hidden',
+                      width: 'min(780px, 94vw)',
+                      maxWidth: 780,
+                      // Avoid clipping hover outlines / 3D tilt at the edges.
+                      overflow: 'visible',
+                      paddingLeft: 8,
+                      paddingRight: 8,
                     }}
                     aria-label="GitHub contributions heatmap"
                   >

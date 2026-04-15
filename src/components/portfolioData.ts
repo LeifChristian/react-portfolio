@@ -1,30 +1,30 @@
 
 export const portfolioData = [
   {
-    title: 'SOS Platform/Mobile App',
+    title: 'SOS Platform & Mobile App',
     stack: 'React, TypeScript, Node.js, AWS',
     images: [],
-    videoUrls: [],
+    videoUrls: ['https://youtu.be/rBwd3GoVLtg'],
     link: '',
     description:
-      'Full-stack development from the ground up of a real-time system for monitoring devices, events, and alert workflows. Built UI that handles live updates, API-driven flows, and complex integrations across the platform.'
+      'Demo video of SOS Technologies’ EAS management platform. Full-stack development from the ground up of a real-time system for monitoring devices, events, and alert workflows—handling live updates, API-driven flows, and complex integrations across the platform.'
   },
   {
-    title: 'Chatbot Voice Assistant',
-    stack: 'React, TypeScript, Node.js, OpenAI',
+    title: 'Hustle Fundraising Platform',
+    stack: 'React, TypeScript',
     images: [],
-    videoUrls: ['https://www.youtube.com/embed/1MzdpzK6kg4'],
-    link: 'https://github.com/LeifChristian/GPT-speech-realtime-data',
+    videoUrls: ['https://www.youtube.com/watch?v=V-ySIouF6fQ&t=258s'],
+    link: '',
     description:
-      'Voice-enabled application integrating OpenAI APIs with real-time data retrieval and speech processing, focused on async data handling and API orchestration.'
+      'Hustle fundraising demo. Hustle crowdfunding platform demo.'
   },
   {
     title: 'Gaussian Splat & 3D Rendering',
     stack: 'WebGL, TypeScript, Performance Profiling',
     images: [],
-    videoUrls: [],
+    videoUrls: ['https://youtu.be/z4qWIGoRdGA'],
     link: '',
     description:
-      'Web-based rendering experiment exploring real-time 3D visualization techniques and browser performance constraints.'
+      'Demo of Gaussian splat 3D rendering with Three.js overlays and a custom spatial editor beta. Lightweight editor parameters enable performant custom renderings and automated animated actions/events in 3D space.'
   }
 ];

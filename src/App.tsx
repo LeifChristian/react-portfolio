@@ -121,7 +121,7 @@ const MainContent = () => {
         }`}
       >
         <div className="container mx-auto relative flex items-center justify-center">
-          <nav className="flex items-center justify-center gap-5 font-medium">
+          <nav className="flex items-center justify-center gap-6 font-mono text-[12px] uppercase tracking-[0.18em] font-medium">
             <Link
               to="/"
               className={`transition-colors ${
@@ -183,7 +183,7 @@ const MainContent = () => {
       </main>
 
       <footer
-        className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${
+        className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 font-mono text-[12px] uppercase tracking-[0.18em] font-medium ${
           darkMode
             ? 'bg-gray-800 text-white'
             : 'bg-white/90 text-slate-900 backdrop-blur border-t border-slate-200'

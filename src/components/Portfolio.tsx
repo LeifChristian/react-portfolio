@@ -96,7 +96,7 @@ const Portfolio = () => {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveIdx(idx)}
-                className={`relative pt-1 text-center font-mono text-[12px] uppercase tracking-[0.18em] transition-colors ${
+                className={`relative pt-1 text-center font-grotesk text-[13px] sm:text-[14px] font-semibold tracking-tight transition-colors ${
                   isActive
                     ? 'text-gray-900 dark:text-white'
                     : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'

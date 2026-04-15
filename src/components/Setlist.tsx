@@ -3,9 +3,10 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useNavigate } from 'react-router-dom';
 import { useThemeContext } from '../ThemeProvider';
 import { Edit2, Save, X, Download, Trash2, Plus, Send, Search, GripVertical, ListMusic } from 'lucide-react';
-import { supabase, Song as SupabaseSong, Note, CustomSetlist, CustomSetlistSong } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, Song as SupabaseSong, Note, CustomSetlist, CustomSetlistSong } from '../lib/supabase';
 
 const SETLIST_STORAGE_KEY = 'setlist_content';
 const SETLIST_PASSWORD_HASH_KEY = 'setlist_password_hash';
@@ -74,6 +75,7 @@ const DEFAULT_SETLIST = `# Master Setlist (51 Songs)
 
 export const Setlist: React.FC = () => {
   const { darkMode } = useThemeContext();
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(true);
   const [password, setPassword] = useState('');
@@ -85,7 +87,7 @@ export const Setlist: React.FC = () => {
   const [editingItem, setEditingItem] = useState<{section: string, index: number, song: string, artist: string, originalSong: string, originalArtist: string} | null>(null);
   const [deletingItem, setDeletingItem] = useState<{section: string, index: number, song: string, artist: string} | null>(null);
   const [newSong, setNewSong] = useState({ section: '', song: '', artist: '' });
-  const useDB = true; // Always use database
+  const useDB = isSupabaseConfigured; // Use DB only when configured; otherwise fall back to local
   const [dbLoading, setDbLoading] = useState(false);
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<'Collin' | 'Leif' | 'Ryland' | null>(null);
@@ -113,6 +115,21 @@ export const Setlist: React.FC = () => {
   const isMountedRef = useRef(true);
   const notesFetchInProgressRef = useRef(false);
   const pendingNotesScrollBehaviorRef = useRef<ScrollBehavior | null>(null);
+
+  const requireSupabase = (): NonNullable<typeof supabase> => {
+    if (!supabase) {
+      throw new Error('Supabase not configured');
+    }
+    return supabase;
+  };
+
+  const exitSetlistGate = useCallback(() => {
+    setPassword('');
+    setError('');
+    setShowPasswordDialog(false);
+    setShowUserDialog(false);
+    navigate('/');
+  }, [navigate]);
 
   // Hash function using Web Crypto API
   const hashPassword = async (password: string): Promise<string> => {
@@ -184,12 +201,13 @@ export const Setlist: React.FC = () => {
   }, []); // DEFAULT_SETLIST is a constant outside component, doesn't need to be in deps
 
   const loadSetlistFromDB = useCallback(async () => {
+    const sb = requireSupabase();
     setDbLoading(true);
     try {
       // Fetch all songs ordered by global master_order (falls back if column isn't present yet)
       let songs: SupabaseSong[] | null = null;
       {
-        const { data, error } = await supabase
+        const { data, error } = await sb
           .from('songs')
           .select('*')
           .order('master_order', { ascending: true })
@@ -199,7 +217,7 @@ export const Setlist: React.FC = () => {
           songs = data as SupabaseSong[] | null;
         } else {
           // Fallback for older schemas (no master_order yet)
-          const { data: fallbackData, error: fallbackError } = await supabase
+          const { data: fallbackData, error: fallbackError } = await sb
             .from('songs')
             .select('*')
             .order('section', { ascending: true })
@@ -318,6 +336,10 @@ export const Setlist: React.FC = () => {
   }, []);
 
   const loadNotes = useCallback(async (options?: { scroll?: 'never' | 'if-at-bottom' | 'always'; scrollBehavior?: ScrollBehavior }) => {
+    if (!useDB || !supabase) {
+      return;
+    }
+    const sb = supabase;
     // Prevent overlapping calls - if a fetch is already in progress, skip this one
     if (notesFetchInProgressRef.current) {
       return;
@@ -336,7 +358,7 @@ export const Setlist: React.FC = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('notes')
         .select('*')
         .order('created_at', { ascending: true });
@@ -363,8 +385,12 @@ export const Setlist: React.FC = () => {
 
   // Load custom setlists
   const loadCustomSetlists = useCallback(async () => {
+    if (!useDB || !supabase) {
+      return;
+    }
+    const sb = supabase;
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('custom_setlists')
         .select('*')
         .order('created_at', { ascending: false });
@@ -378,8 +404,13 @@ export const Setlist: React.FC = () => {
 
   // Load a custom setlist
   const loadCustomSetlist = useCallback(async (setlistId: number) => {
+    if (!useDB || !supabase) {
+      setError('Database not configured.');
+      return;
+    }
+    const sb = supabase;
     try {
-      const { data: songs, error } = await supabase
+      const { data: songs, error } = await sb
         .from('custom_setlist_songs')
         .select('*')
         .eq('setlist_id', setlistId)
@@ -399,7 +430,7 @@ export const Setlist: React.FC = () => {
       setBuilderEditMode(false); // Start in view mode when loading existing setlist
       
       // Get setlist name
-      const { data: setlist } = await supabase
+      const { data: setlist } = await sb
         .from('custom_setlists')
         .select('name')
         .eq('id', setlistId)
@@ -416,6 +447,11 @@ export const Setlist: React.FC = () => {
 
   // Save current builder as a custom setlist
   const saveCustomSetlist = useCallback(async () => {
+    if (!useDB || !supabase) {
+      setError('Database not configured.');
+      return;
+    }
+    const sb = supabase;
     if (!setlistName.trim()) {
       setError('Please enter a name for the setlist.');
       return;
@@ -426,7 +462,7 @@ export const Setlist: React.FC = () => {
 
       if (currentSetlistId) {
         // Update existing setlist
-        const { error: updateError } = await supabase
+        const { error: updateError } = await sb
           .from('custom_setlists')
           .update({ name: setlistName.trim() })
           .eq('id', currentSetlistId);
@@ -434,7 +470,7 @@ export const Setlist: React.FC = () => {
         if (updateError) throw updateError;
 
         // Delete existing songs
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await sb
           .from('custom_setlist_songs')
           .delete()
           .eq('setlist_id', currentSetlistId);
@@ -443,7 +479,7 @@ export const Setlist: React.FC = () => {
         finalSetlistId = currentSetlistId;
       } else {
         // Create new setlist
-        const { data: newSetlist, error: insertError } = await supabase
+        const { data: newSetlist, error: insertError } = await sb
           .from('custom_setlists')
           .insert({ name: setlistName.trim() })
           .select()
@@ -464,7 +500,7 @@ export const Setlist: React.FC = () => {
       }));
 
       if (songsToInsert.length > 0) {
-        const { error: songsError } = await supabase
+        const { error: songsError } = await sb
           .from('custom_setlist_songs')
           .insert(songsToInsert);
 
@@ -484,8 +520,13 @@ export const Setlist: React.FC = () => {
 
   // Delete a custom setlist
   const deleteCustomSetlist = useCallback(async (setlistId: number) => {
+    if (!useDB || !supabase) {
+      setError('Database not configured.');
+      return;
+    }
+    const sb = supabase;
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('custom_setlists')
         .delete()
         .eq('id', setlistId);
@@ -502,7 +543,7 @@ export const Setlist: React.FC = () => {
       console.error('Error deleting custom setlist:', err);
       setError('Failed to delete setlist.');
     }
-  }, [currentSetlistId, loadCustomSetlists]);
+  }, [useDB, currentSetlistId, loadCustomSetlists]);
 
   // Load setlist when authenticated and user is selected
   useEffect(() => {
@@ -533,10 +574,11 @@ export const Setlist: React.FC = () => {
 
   // Load notes when authenticated and user is selected
   useEffect(() => {
-    if (isAuthenticated && selectedUser) {
+    if (useDB && supabase && isAuthenticated && selectedUser) {
+      const sb = supabase;
       loadNotes({ scroll: 'never' });
       // Set up real-time subscription for notes
-      const notesSubscription = supabase
+      const notesSubscription = sb
         .channel('notes_changes')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'notes' },
@@ -554,7 +596,7 @@ export const Setlist: React.FC = () => {
 
   // Set up interval to refresh notes every 1 minute
   useEffect(() => {
-    if (isAuthenticated && selectedUser) {
+    if (useDB && supabase && isAuthenticated && selectedUser) {
       // Refresh notes every 60 seconds (1 minute)
       const intervalId = setInterval(() => {
         // Only refresh if component is still mounted and no fetch in progress
@@ -589,9 +631,14 @@ export const Setlist: React.FC = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
+    if (!useDB || !supabase) {
+      setError('Database not configured.');
+      return;
+    }
+    const sb = supabase;
 
     try {
-      const { error } = await supabase
+      const { error } = await sb
         .from('notes')
         .insert({
           user_name: selectedUser,
@@ -609,13 +656,18 @@ export const Setlist: React.FC = () => {
   };
 
   const handleSaveToDB = async () => {
+    if (!useDB || !supabase) {
+      setError('Database not configured.');
+      return;
+    }
+    const sb = supabase;
     setDbLoading(true);
     try {
       // Parse the markdown and sync to database
       const sections = parseMarkdown(editContent);
       
       // Delete all existing songs
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await sb
         .from('songs')
         .delete()
         .neq('id', 0); // Delete all
@@ -636,7 +688,7 @@ export const Setlist: React.FC = () => {
       });
 
       if (songsToInsert.length > 0) {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await sb
           .from('songs')
           .insert(songsToInsert);
 
@@ -894,9 +946,10 @@ export const Setlist: React.FC = () => {
   const [newSectionName, setNewSectionName] = useState('');
   
   const handleAddSongToDB = async (sectionTitle: string, song: string, artist: string) => {
+    const sb = requireSupabase();
     try {
       // Get max order_index for this section
-      const { data: existingSongs } = await supabase
+      const { data: existingSongs } = await sb
         .from('songs')
         .select('order_index')
         .eq('section', sectionTitle)
@@ -907,7 +960,7 @@ export const Setlist: React.FC = () => {
         ? existingSongs[0].order_index + 1 
         : 0;
 
-      const { error } = await supabase
+      const { error } = await sb
         .from('songs')
         .insert({
           section: sectionTitle,
@@ -961,9 +1014,10 @@ export const Setlist: React.FC = () => {
     if (!editingItem) return;
     
     setDbLoading(true);
+    const sb = requireSupabase();
     try {
       // Check if database is empty - if so, save current setlist first
-      const { data: existingSongs, error: checkError } = await supabase
+      const { data: existingSongs, error: checkError } = await sb
         .from('songs')
         .select('id')
         .limit(1);
@@ -987,7 +1041,7 @@ export const Setlist: React.FC = () => {
         });
 
         if (songsToInsert.length > 0) {
-          const { error: insertError } = await supabase
+          const { error: insertError } = await sb
             .from('songs')
             .insert(songsToInsert);
 
@@ -1000,7 +1054,7 @@ export const Setlist: React.FC = () => {
       const searchArtist = editingItem.originalArtist.trim();
 
       // First try exact match
-      let { data: songsByContent, error: fetchError } = await supabase
+      let { data: songsByContent, error: fetchError } = await sb
         .from('songs')
         .select('id, song, artist')
         .eq('song', searchSong)
@@ -1011,7 +1065,7 @@ export const Setlist: React.FC = () => {
 
       // If no exact match, try case-insensitive
       if (!songsByContent || songsByContent.length === 0) {
-        const { data: allSongs } = await supabase
+        const { data: allSongs } = await sb
           .from('songs')
           .select('id, song, artist')
           .limit(100);
@@ -1033,7 +1087,7 @@ export const Setlist: React.FC = () => {
         throw new Error('Song ID not found');
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await sb
         .from('songs')
         .update({
           song: editingItem.song.trim(),
@@ -1078,16 +1132,17 @@ export const Setlist: React.FC = () => {
   };
 
   const handleDeleteSongFromDB = async (sectionTitle: string, index: number) => {
+    const sb = requireSupabase();
     try {
       // Get the song ID from the database
-      const { data: songs } = await supabase
+      const { data: songs } = await sb
         .from('songs')
         .select('id')
         .eq('section', sectionTitle)
         .order('order_index', { ascending: true });
 
       if (songs && songs[index]) {
-        const { error } = await supabase
+        const { error } = await sb
           .from('songs')
           .delete()
           .eq('id', songs[index].id);
@@ -1103,9 +1158,10 @@ export const Setlist: React.FC = () => {
 
   // Handle drag and drop reordering for master setlist
   const handleReorderMasterSong = async (sectionTitle: string, fromIndex: number, toIndex: number) => {
+    const sb = requireSupabase();
     try {
       // Get all songs in the section
-      const { data: songs, error: fetchError } = await supabase
+      const { data: songs, error: fetchError } = await sb
         .from('songs')
         .select('*')
         .eq('section', sectionTitle)
@@ -1127,7 +1183,7 @@ export const Setlist: React.FC = () => {
 
       // Update all songs
       for (const update of updates) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await sb
           .from('songs')
           .update({ order_index: update.order_index })
           .eq('id', update.id);
@@ -1263,7 +1319,7 @@ export const Setlist: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <Transition appear show={showPasswordDialog} as={Fragment}>
-        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => {}}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={exitSetlistGate}>
           <div className="min-h-screen px-4 text-center">
             <Transition.Child
               as={Fragment}
@@ -1317,7 +1373,18 @@ export const Setlist: React.FC = () => {
                   {error && (
                     <p className="mt-2 text-sm text-red-500">{error}</p>
                   )}
-                  <div className="mt-4">
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={exitSetlistGate}
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+                        darkMode
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                      }`}
+                    >
+                      Cancel
+                    </button>
                     <button
                       type="submit"
                       className={`w-full px-4 py-2 rounded-lg font-medium ${
@@ -1342,7 +1409,7 @@ export const Setlist: React.FC = () => {
   if (isAuthenticated && !selectedUser) {
     return (
       <Transition appear show={showUserDialog} as={Fragment}>
-        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={() => {}}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={exitSetlistGate}>
           <div className="min-h-screen px-4 text-center">
             <Transition.Child
               as={Fragment}
@@ -1392,6 +1459,17 @@ export const Setlist: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={exitSetlistGate}
+                  className={`mt-4 w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+                    darkMode
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
               </div>
             </Transition.Child>
           </div>

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Home } from './components/Home';
 import ContactForm from './components/ContactForm'
 import Portfolio from './components/Portfolio';
@@ -29,7 +29,8 @@ const pageLoadStyles = `
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: grey;
+    /* Neutral light canvas behind everything (main sets its own bg). */
+    background-color: #f8fafc;
     z-index: -1;
   }
 
@@ -95,32 +96,85 @@ function App() {
 
 const MainContent = () => {
   const { toggleTheme, darkMode } = useThemeContext();
+  const location = useLocation();
+
+  // Track previous path (available during render on route changes).
+  const prevPathRef = useRef<string | null>(null);
+  const prevPath = prevPathRef.current ?? undefined;
+  useEffect(() => {
+    prevPathRef.current = location.pathname;
+  }, [location.pathname]);
+
+  const hideFooterSocials =
+    location.pathname === '/' &&
+    typeof window !== 'undefined' &&
+    sessionStorage.getItem('lc_home_intro_done_v1') === '1' &&
+    prevPath === '/portfolio';
 
   return (
     <div className="h-screen flex flex-col">
-      <header className={`sticky top-0 z-10 p-4 font-bold shadow-md ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-400'}`}>
-        <div className="container mx-auto flex md:justify-between md:justify-between sm:justify-around items-center">
-          <nav className="flex items-center">
-            <Link to="/" className="mr-4">Home</Link>
-            <Link to="/portfolio" className="mr-4">Portfolio</Link>
-            <Link to="/contact" className="mr-4">Contact</Link>
-            <Link to="/setlist" className="mr-4">Setlist</Link>
-            <button onClick={toggleTheme} className="focus:outline-none flex-end">
-              {darkMode ? (
-                <SunIcon className="w-6 h-6 text-yellow-400" aria-label="Switch to Light Mode" />
-              ) : (
-                <MoonIcon className="w-6 h-6 text-gray-500" aria-label="Switch to Dark Mode" />
-              )}
-            </button>
+      <header
+        className={`sticky top-0 z-10 p-4 font-semibold ${
+          darkMode
+            ? 'bg-gray-800 text-white shadow-md'
+            : 'bg-white/90 text-slate-900 backdrop-blur border-b border-slate-200 shadow-sm'
+        }`}
+      >
+        <div className="container mx-auto relative flex items-center justify-center">
+          <nav className="flex items-center justify-center gap-5 font-medium">
+            <Link
+              to="/"
+              className={`transition-colors ${
+                darkMode ? 'hover:text-sky-300' : 'text-slate-700 hover:text-blue-600'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              to="/portfolio"
+              className={`transition-colors ${
+                darkMode ? 'hover:text-sky-300' : 'text-slate-700 hover:text-blue-600'
+              }`}
+            >
+              Portfolio
+            </Link>
+            <Link
+              to="/contact"
+              className={`transition-colors ${
+                darkMode ? 'hover:text-sky-300' : 'text-slate-700 hover:text-blue-600'
+              }`}
+            >
+              Contact
+            </Link>
+            <Link
+              to="/setlist"
+              className={`hidden transition-colors ${
+                darkMode ? 'hover:text-sky-300' : 'text-slate-700 hover:text-blue-600'
+              }`}
+            >
+              Setlist
+            </Link>
           </nav>
+
+          <button
+            onClick={toggleTheme}
+            className="absolute right-0 top-1/2 -translate-y-1/2 focus:outline-none"
+          >
+            {darkMode ? (
+              <SunIcon className="w-6 h-6 text-yellow-400" aria-label="Switch to Light Mode" />
+            ) : (
+              <MoonIcon className="w-6 h-6 text-gray-500" aria-label="Switch to Dark Mode" />
+            )}
+          </button>
         </div>
       </header>
 
-      <main className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-gray-500'}`}
+      <main
+        className={`flex-1 overflow-y-auto ${darkMode ? 'bg-gray-900' : 'bg-slate-50'}`}
             style={{ marginBottom: "60px" }}> 
-        <div className="container mx-auto">
+        <div className="container mx-auto h-full min-h-full">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home previousPath={prevPath} />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/contact" element={<ContactForm />} />
             <Route path="/setlist" element={<Setlist />} />
@@ -128,33 +182,49 @@ const MainContent = () => {
         </div>
       </main>
 
-      <footer className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${darkMode ? 'bg-gray-800 text-white' : 'bg-blue-400 text-black'}`}>
+      <footer
+        className={`fixed bottom-0 left-0 right-0 text-center p-4 w-full z-50 ${
+          darkMode
+            ? 'bg-gray-800 text-white'
+            : 'bg-white/90 text-slate-900 backdrop-blur border-t border-slate-200'
+        }`}
+      >
         <div className="flex items-center justify-center gap-4">
-          <span>© 2024 Leif Christian</span>
-          <div className="flex gap-3">
-            <a 
-              href="http://www.github.com/leifchristian" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity"
-            >
-              <Github 
-                size={24} 
-                className={darkMode ? "text-white" : "text-black"}
-              />
-            </a>
-            <a 
-              href="https://www.linkedin.com/in/leifchristian" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity"
-            >
-              <Linkedin 
-                size={24} 
-                className={darkMode ? "text-white" : "text-black"}
-              />
-            </a>
-          </div>
+          <span>© 2026 Leif Christian</span>
+          {!hideFooterSocials && (
+            <div className="flex gap-3">
+              <a 
+                href="http://www.github.com/leifchristian" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group transition-colors ${
+                  darkMode ? 'hover:text-sky-300' : 'hover:text-blue-600'
+                }`}
+              >
+                <Github 
+                  size={24} 
+                  className={`${
+                    darkMode ? 'text-white group-hover:text-sky-300' : 'text-slate-900 group-hover:text-blue-600'
+                  } transition-colors`}
+                />
+              </a>
+              <a 
+                href="https://www.linkedin.com/in/leifchristian" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group transition-colors ${
+                  darkMode ? 'hover:text-sky-300' : 'hover:text-blue-600'
+                }`}
+              >
+                <Linkedin 
+                  size={24} 
+                  className={`${
+                    darkMode ? 'text-white group-hover:text-sky-300' : 'text-slate-900 group-hover:text-blue-600'
+                  } transition-colors`}
+                />
+              </a>
+            </div>
+          )}
         </div>
       </footer>
     </div>

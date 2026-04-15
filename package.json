@@ -33,7 +33,7 @@
   "scripts": {
     "start": "react-scripts start",
     "g": "react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -58,6 +58,7 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^10.1.0",
     "postcss": "^8.4.48",
     "tailwindcss": "^3.4.14"
   }

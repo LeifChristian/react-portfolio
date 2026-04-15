@@ -1,9 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+const supabaseUrl = (process.env.REACT_APP_SUPABASE_URL ?? '').trim();
+const supabaseAnonKey = (process.env.REACT_APP_SUPABASE_ANON_KEY ?? '').trim();
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+// NOTE: Supabase client must not be created when env vars are missing,
+// otherwise supabase-js throws at import time and crashes the entire app.
+export const supabase: SupabaseClient | null = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Database types
 export type Song = {

@@ -71,7 +71,7 @@ const Portfolio = () => {
       <div className="mb-5 text-center">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Portfolio</h1>
         <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-          A small selection of recent work—kept intentionally minimal and resume-aligned.
+          A small selection of recent work.
         </p>
       </div>
 

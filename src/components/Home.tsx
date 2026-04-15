@@ -255,13 +255,14 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
 
       const marqueeSlides: React.ReactNode[] = [
         <>
-          Hi, I’m Leif Christian — a frontend-focused full-stack engineer working with{' '}
-          <span className="whitespace-nowrap">React and TypeScript</span>.
+          Hi, I’m Leif Christian — a frontend-focused full-stack engineer.
           <br />
-          I build real-time, data-heavy interfaces that stay performant under constant change.
+          I build real-time, data-heavy interfaces that stay performant
+          <br />
+          under constant change in <span className="whitespace-nowrap">React and TypeScript</span>.
         </>,
         <>
-          I currently lead development at{' '}
+          I lead development at{' '}
           <a
             href="https://sos-tech.com/"
             target="_blank"
@@ -270,12 +271,16 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
           >
             SOS Technologies
           </a>{' '}
-          on our real-time incident platform.
+          on a real-time incident platform.
           <br />
-          I focus on integration-heavy, event-driven UI that reflects live system state.
+          Integration-heavy, event-driven UI that reflects live system state
+          <br />
+          across alert workflows, device monitoring, and API-driven flows.
         </>,
         <>
-          I build full-stack applications across web, mobile and desktop using React, Next.js, React Native / Expo and Node.js, focused on API-driven and integration-heavy systems.
+          I ship across web, mobile, and desktop with React and Next.js,
+          <br />
+          React Native / Expo + Node.js for API-driven, integration-heavy systems.
         </>,
       ];
 
@@ -353,7 +358,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
                       animationDelay: marqueeIdx === 0 ? `${MARQUEE_START_DELAY_MS}ms` : '0ms',
                     }}
                   >
-                    <div className="home-hero-text-glow mx-auto max-w-[72ch] px-4 whitespace-pre-line text-center [text-wrap:pretty] font-grotesk text-[20px] sm:text-[27px] md:text-[32px] leading-snug font-normal tracking-wide text-white">
+                    <div className="home-hero-text-glow mx-auto max-w-[90ch] px-4 whitespace-pre-line text-center font-grotesk text-[20px] sm:text-[27px] md:text-[32px] leading-snug font-normal tracking-wide text-white">
                       {marqueeSlides[marqueeIdx]}
                     </div>
                   </div>

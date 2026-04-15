@@ -138,7 +138,9 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({
           variant === 'showcase' ? 'p-6 sm:p-7' : 'p-5'
         }`}
       >
-        <div className="aspect-video w-full mb-4 relative flex-shrink-0">
+        <div
+          className={`w-full ${variant === 'showcase' ? 'mb-5' : 'mb-4'} relative flex-shrink-0`}
+        >
           {slides.length > 0 ? (
             <Swiper
               modules={[Navigation, EffectFade, EffectCreative, Autoplay, Mousewheel, Keyboard]}
@@ -232,12 +234,18 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-lg font-semibold tracking-tight text-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 no-underline"
+                className={`font-semibold tracking-tight text-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 no-underline ${
+                  variant === 'showcase' ? 'text-xl sm:text-2xl' : 'text-lg'
+                }`}
               >
                 {title}
               </a>
             ) : (
-              <div className={`text-lg font-semibold tracking-tight text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <div
+                className={`font-semibold tracking-tight text-center ${darkMode ? 'text-white' : 'text-gray-900'} ${
+                  variant === 'showcase' ? 'text-xl sm:text-2xl' : 'text-lg'
+                }`}
+              >
                 {title}
               </div>
             )}
@@ -250,7 +258,11 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({
               </div>
             )}
 
-            <p className={`${darkMode ? 'text-gray-200' : 'text-gray-800'} text-center text-sm leading-relaxed line-clamp-4`}>
+            <p
+              className={`${darkMode ? 'text-gray-200' : 'text-gray-800'} text-center leading-relaxed ${
+                variant === 'showcase' ? 'text-[15px] sm:text-base line-clamp-5' : 'text-sm line-clamp-4'
+              }`}
+            >
               {description}
             </p>
           </div>

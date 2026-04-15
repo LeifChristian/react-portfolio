@@ -137,7 +137,7 @@ const Portfolio = () => {
 
         {/* Active showcase */}
         <div className="mt-5 relative">
-          <PortfolioCard {...activeProject} variant="showcase" showMeta={false} />
+          <PortfolioCard {...activeProject} variant="showcase" showMeta={true} />
 
           {/* Nav dots (inside the card area, bottom-center) */}
           <div
@@ -164,38 +164,6 @@ const Portfolio = () => {
               );
             })}
           </div>
-        </div>
-
-        {/* Description area */}
-        <div className="mt-4 text-center">
-          {activeProject.link ? (
-            <a
-              href={activeProject.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xl font-semibold tracking-tight text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 no-underline"
-            >
-              {activeProject.title}
-            </a>
-          ) : (
-            <div className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
-              {activeProject.title}
-            </div>
-          )}
-
-          {activeProject.stack && (
-            <div className="mt-2">
-              <span className="text-xs font-medium px-2 py-1 rounded-full bg-black/5 text-gray-700 dark:bg-white/10 dark:text-gray-200">
-                {activeProject.stack}
-              </span>
-            </div>
-          )}
-
-          <p className="mt-3 mx-auto max-w-[80ch] text-sm leading-relaxed text-gray-800 dark:text-gray-200">
-            {activeProject.description}
-          </p>
-
-          {/* (nav dots moved into the media card) */}
         </div>
       </div>
     </div>

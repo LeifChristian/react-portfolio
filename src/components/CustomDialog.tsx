@@ -1,8 +1,10 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState } from 'react';
+import { useThemeContext } from '../ThemeProvider';
 
 export const CustomDialog: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { darkMode } = useThemeContext();
 
   const openDialog = () => setIsOpen(true);
   const closeDialog = () => setIsOpen(false);
@@ -41,12 +43,18 @@ export const CustomDialog: React.FC = () => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
-                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+              <div
+                className={`inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform shadow-xl rounded-2xl ${
+                  darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                }`}
+              >
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6">
                   Dialog Title
                 </Dialog.Title>
                 <div className="mt-2">
-                  <p className="text-sm text-gray-500">Your dialog content goes here.</p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Your dialog content goes here.
+                  </p>
                 </div>
 
                 <div className="mt-4">

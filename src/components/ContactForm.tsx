@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { useThemeContext } from '../ThemeProvider';
+import background from '../assets/stock1.png';
 
 const ContactForm: React.FC = () => {
   const formRef = useRef<HTMLFormElement>(null);
@@ -69,88 +70,121 @@ const ContactForm: React.FC = () => {
     }
   };
 
+  const pageStyle: React.CSSProperties = {
+    backgroundImage: `url(${background})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+    width: '100vw',
+    marginLeft: 'calc(50% - 50vw)',
+    minHeight: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
   return (
-    <div className={`container mx-auto p-4 max-w-md mt-4`}>
-      <h2 className="text-2xl font-bold mb-4 text-center dark:text-white pb-6">Let's connect!</h2>
-      
-      <div 
-        className={`contact-form-3d-container ${!isHovered ? 'contact-form-3d' : ''}`}
-        style={{ 
-          animation: animate ? 'spinY 3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-          transform: isHovered ? 'none' : undefined,
-          transition: 'transform 0.3s ease'
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <form 
-          ref={formRef} 
-          onSubmit={sendEmail} 
-          className="space-y-4"
+    <div style={pageStyle}>
+      {/* Dark overlay for readability */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 ${
+          darkMode ? 'bg-black/70' : 'bg-white/70'
+        }`}
+      />
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${
+          darkMode
+            ? 'from-black/65 via-black/15 to-black/80'
+            : 'from-white/75 via-white/10 to-white/85'
+        }`}
+      />
+
+      <div className="relative container mx-auto p-4 max-w-md mt-4">
+        <h2 className="text-2xl font-bold mb-4 text-center text-gray-900 dark:text-white pb-6">
+          Let's connect!
+        </h2>
+        
+        <div 
+          className={`contact-form-3d-container ${!isHovered ? 'contact-form-3d' : ''}`}
           style={{ 
-            border: '2px solid white',
+            animation: animate ? 'spinY 3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
             transform: isHovered ? 'none' : undefined,
-            transition: 'all 0.3s ease',
-            filter: darkMode 
-              ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))' 
-              : 'drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))'
+            transition: 'transform 0.3s ease'
           }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          <div>
-            <label htmlFor="user_name" className={`block font-medium text-gray-400 dark:text-white`}>
-              Name
-            </label>
-            <input
-              type="text"
-              id="user_name"
-              name="user_name"
-              required
-              className="w-full p-2 mt-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div>
-            <label htmlFor="user_email" className="block font-medium text-gray-400 dark:text-gray-200">
-              Email
-            </label>
-            <input
-              type="email"
-              id="user_email"
-              name="user_email"
-              required
-              className="w-full p-2 mt-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-          </div>
-          <div>
-            <label htmlFor="message" className="block font-medium text-gray-400 dark:text-gray-200">
-              Message
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              rows={4}
-              required
-              className="w-full p-2 mt-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            ></textarea>
-          </div>
-          <div>
-            <button
-              type="submit"
-              disabled={isSending || !isEmailConfigured}
-              className="w-full py-2 px-4 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSending ? 'Sending...' : 'Send'}
-            </button>
-          </div>
-          {statusMessage && (
-            <p
-              className={`text-center font-medium mt-2 ${
-                statusKind === 'success' ? 'text-green-500' : 'text-red-500'
-              }`}
-            >
-              {statusMessage}
-            </p>
-          )}
-        </form>
+          <form 
+            ref={formRef} 
+            onSubmit={sendEmail} 
+            className="space-y-4"
+            style={{ 
+              border: '2px solid white',
+              transform: isHovered ? 'none' : undefined,
+              transition: 'all 0.3s ease',
+              filter: darkMode 
+                ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.5))' 
+                : 'drop-shadow(0 0 10px rgba(0, 0, 0, 0.5))'
+            }}
+          >
+            <div>
+              <label htmlFor="user_name" className="block font-medium text-gray-700 dark:text-gray-200">
+                Name
+              </label>
+              <input
+                type="text"
+                id="user_name"
+                name="user_name"
+                required
+                className="w-full p-2 mt-1 border rounded bg-white/90 border-black/10 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+            <div>
+              <label htmlFor="user_email" className="block font-medium text-gray-700 dark:text-gray-200">
+                Email
+              </label>
+              <input
+                type="email"
+                id="user_email"
+                name="user_email"
+                required
+                className="w-full p-2 mt-1 border rounded bg-white/90 border-black/10 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+            <div>
+              <label htmlFor="message" className="block font-medium text-gray-700 dark:text-gray-200">
+                Message
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                rows={4}
+                required
+                className="w-full p-2 mt-1 border rounded bg-white/90 border-black/10 text-gray-900 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              ></textarea>
+            </div>
+            <div>
+              <button
+                type="submit"
+                disabled={isSending || !isEmailConfigured}
+                className="w-full py-2 px-4 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSending ? 'Sending...' : 'Send'}
+              </button>
+            </div>
+            {statusMessage && (
+              <p
+                className={`text-center font-medium mt-2 ${
+                  statusKind === 'success' ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {statusMessage}
+              </p>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   );

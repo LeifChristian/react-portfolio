@@ -273,7 +273,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
           </a>{' '}
           on a real-time incident platform.
           <br />
-          Integration-heavy, event-driven UI that reflects live system state
+          I build integration-heavy, event-driven UI that reflects live system state
           <br />
           across alert workflows, device monitoring, and API-driven flows.
         </>,
@@ -317,7 +317,8 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
             // Symmetric top/bottom padding: gives equal "air" above name and below bottom block.
             // Bumped up so the name/bottom block aren't hugging the edges.
             paddingTop: isMobile ? 24 : 36,
-            paddingBottom: isMobile ? 24 : 36,
+            // Extra breathing room so bottom icons never clip.
+            paddingBottom: isMobile ? 30 : 44,
           }}
         >
           {/* Top: name */}

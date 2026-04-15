@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PortfolioCard from './PortfolioCard';
 import { portfolioData } from './portfolioData';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useThemeContext } from '../ThemeProvider';
+import background from '../assets/stock1.png';
 
 const Portfolio = () => {
   const mainRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { darkMode } = useThemeContext();
   const [activeIdx, setActiveIdx] = useState(0);
   const cinematicFromHome = useMemo(
     () => Boolean((location.state as any)?.cinematic),
@@ -56,8 +59,38 @@ const Portfolio = () => {
 
   const activeProject = portfolioData[Math.min(activeIdx, portfolioData.length - 1)];
 
+  const pageStyle: React.CSSProperties = {
+    backgroundImage: `url(${background})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    backgroundAttachment: 'fixed',
+    width: '100vw',
+    marginLeft: 'calc(50% - 50vw)',
+    minHeight: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
   return (
-    <div ref={mainRef} className="container mx-auto p-4">
+    <div style={pageStyle}>
+      {/* Dark overlay for readability */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 ${
+          darkMode ? 'bg-black/70' : 'bg-white/70'
+        }`}
+      />
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-b ${
+          darkMode
+            ? 'from-black/65 via-black/15 to-black/80'
+            : 'from-white/75 via-white/10 to-white/85'
+        }`}
+      />
+
+      <div ref={mainRef} className="relative container mx-auto p-4">
       {/* Cinematic fade-in from black (only when coming from Home auto-redirect) */}
       <div
         aria-hidden="true"
@@ -69,8 +102,10 @@ const Portfolio = () => {
         }}
       />
       <div className="mb-5 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Portfolio</h1>
-        <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+          Portfolio
+        </h1>
+        <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">
           A small selection of recent work.
         </p>
       </div>
@@ -165,6 +200,7 @@ const Portfolio = () => {
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

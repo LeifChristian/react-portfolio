@@ -6,13 +6,24 @@ const ContactForm: React.FC = () => {
   const formRef = useRef<HTMLFormElement>(null);
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusKind, setStatusKind] = useState<'success' | 'error' | null>(null);
   const { darkMode } = useThemeContext();
   const [animate, setAnimate] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  const emailjsPublicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || '';
+  const emailjsServiceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || '';
+  const emailjsTemplateId =
+    process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_ia2g5do';
+
+  const isEmailConfigured = Boolean(
+    emailjsPublicKey && emailjsServiceId && emailjsTemplateId
+  );
+
   useEffect(() => {
-    // Initialize EmailJS
-    emailjs.init(process.env.REACT_APP_EMAILJS_PUBLIC_KEY || '');
+    if (emailjsPublicKey) {
+      emailjs.init(emailjsPublicKey);
+    }
     
     setTimeout(() => {
       setAnimate(true);
@@ -23,24 +34,35 @@ const ContactForm: React.FC = () => {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [emailjsPublicKey]);
 
   const sendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
     setStatusMessage(null);
+    setStatusKind(null);
 
     try {
+      if (!isEmailConfigured) {
+        setStatusKind('error');
+        setStatusMessage(
+          'Contact form is not configured right now. Please email me directly or try again later.'
+        );
+        return;
+      }
+
       await emailjs.sendForm(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID || '',
-        'template_ia2g5do', // You might want to put this in env vars too
+        emailjsServiceId,
+        emailjsTemplateId,
         formRef.current!,
-        process.env.REACT_APP_EMAILJS_PUBLIC_KEY || ''
+        emailjsPublicKey
       );
+      setStatusKind('success');
       setStatusMessage('Message sent! Chat soon');
       formRef.current?.reset();
     } catch (error) {
       console.error('EmailJS Error:', error);
+      setStatusKind('error');
       setStatusMessage('Failed to send the message. Please try again later.');
     } finally {
       setIsSending(false);
@@ -113,14 +135,18 @@ const ContactForm: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isSending}
+              disabled={isSending || !isEmailConfigured}
               className="w-full py-2 px-4 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSending ? 'Sending...' : 'Send'}
             </button>
           </div>
           {statusMessage && (
-            <p className={`text-center font-medium mt-2 ${statusMessage.includes('successfully') ? 'text-green-500' : 'text-red-500'}`}>
+            <p
+              className={`text-center font-medium mt-2 ${
+                statusKind === 'success' ? 'text-green-500' : 'text-red-500'
+              }`}
+            >
               {statusMessage}
             </p>
           )}

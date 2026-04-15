@@ -134,7 +134,7 @@ const PortfolioCard: React.FC<PortfolioCardProps> = ({
   return (
     <div className="group relative">
       <div
-        className={`rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform duration-300 ease-out group-hover:-translate-y-1 ${
+        className={`rounded-3xl overflow-hidden border border-black/5 dark:border-white/10 bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-[0_10px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${
           variant === 'showcase' ? 'p-6 sm:p-7' : 'p-5'
         }`}
       >

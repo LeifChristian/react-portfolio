@@ -265,7 +265,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
             href="https://sos-tech.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sky-300 hover:text-sky-200 no-underline font-medium"
+            className="text-sky-300 hover:text-sky-200 no-underline font-medium whitespace-nowrap"
           >
             SOS Technologies
           </a>{' '}
@@ -341,7 +341,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
           {/* Bottom: marquee (intro) OR socials (after intro) */}
           <div className="w-full pb-0">
             {!isIntroDone ? (
-              <div className="mx-auto w-full max-w-[1200px]">
+              <div className="mx-auto w-full max-w-[1400px]">
                 <div className="relative mx-auto h-[10.5rem] sm:h-[10.75rem] md:h-[11.5rem] overflow-hidden flex items-center justify-center">
                   <div
                     key={`marquee-${marqueeIdx}`}
@@ -352,7 +352,7 @@ export const Home: React.FC<{ previousPath?: string }> = ({ previousPath }) => {
                       animationDelay: marqueeIdx === 0 ? `${MARQUEE_START_DELAY_MS}ms` : '0ms',
                     }}
                   >
-                    <div className="home-hero-text-glow px-4 text-balance whitespace-pre-line font-grotesk text-[20px] sm:text-[27px] md:text-[32px] leading-snug font-normal tracking-wide text-white">
+                    <div className="home-hero-text-glow px-4 whitespace-pre-line font-grotesk text-[20px] sm:text-[27px] md:text-[32px] leading-snug font-normal tracking-wide text-white">
                       {marqueeSlides[marqueeIdx]}
                     </div>
                   </div>

@@ -148,7 +148,7 @@ const MainContent = () => {
             </Link>
             <Link
               to="/setlist"
-              className={`hidden transition-colors ${
+              className={`transition-colors ${
                 darkMode ? 'hover:text-sky-300' : 'text-slate-700 hover:text-blue-600'
               }`}
             >

@@ -1,6 +1,15 @@
 
 export const portfolioData = [
   {
+    title: 'Custom Maps & AI Chat',
+    stack: 'Playwright, Rails, Three.js',
+    images: [],
+    videoUrls: ['https://youtu.be/tXmByzYDH6g'],
+    link: '',
+    description:
+      'Automated click-through of a custom maps app with an AI chatbot, bounding boxes, and 3D overlays in Three.js. Playwright uses AI chat responses on Rails to navigate and animate to destinations, bounding boxes, and data subsets.'
+  },
+  {
     title: 'SOS Platform & Mobile App',
     stack: 'React, TypeScript, Node.js, AWS',
     images: [],
